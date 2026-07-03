@@ -56,6 +56,27 @@
   td.r,th.r{text-align:right}
   .foot{color:var(--muted);font-size:11px;text-align:center;margin:26px 0 8px;line-height:1.6}
   .hidden{display:none}
+  .dpick{position:relative;display:inline-block}
+  .dp-trigger{background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+  .dp-panel{position:absolute;top:46px;left:0;z-index:60;display:flex;background:#0f141a;border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 34px rgba(0,0,0,.55)}
+  .dp-left{display:flex;flex-direction:column;gap:8px;padding:14px;border-right:1px solid var(--border);min-width:158px}
+  .dp-preset{background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:12px;cursor:pointer}
+  .dp-preset:hover{border-color:var(--blue);color:#cfe0ff}
+  .dp-right{padding:14px;width:340px}
+  .dp-tabs{display:flex;gap:4px;margin-bottom:12px}
+  .dp-tabs button{flex:1;background:var(--panel);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:7px 0;font-size:12px;cursor:pointer}
+  .dp-tabs button.on{background:#12233a;border-color:#2f5488;color:#cfe0ff}
+  .dp-calnav{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px;color:var(--text)}
+  .dp-calnav button{background:none;border:0;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px}
+  .dp-calnav #dpMonth{font-weight:700;min-width:100px;text-align:center}
+  .dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .dp-wd{color:var(--muted);font-size:11px;text-align:center;padding:4px 0}
+  .dp-day{text-align:center;padding:8px 0;font-size:13px;border-radius:7px;cursor:pointer;color:var(--text)}
+  .dp-day:hover{background:#1b222b}
+  .dp-day.out{color:#39424d;cursor:default}
+  .dp-day.inr{background:#2a2411;color:var(--gold2)}
+  .dp-day.ks,.dp-day.sel{background:var(--gold);color:#0b0e11;font-weight:700}
+  .dp-day.tdy{outline:1px solid var(--blue)}
   @media(max-width:880px){.cards,.two{grid-template-columns:1fr}.bar-row{grid-template-columns:120px 1fr 96px}}
 </style>
 </head>
@@ -67,13 +88,35 @@
       <div class="sub" id="sub">Live Streaming · Overview · Marketing — gaya SCM · <b id="mode">snapshot Live NYATA (26 Jun & 3 Jul 2026) · Overview/Marketing contoh</b></div>
     </div>
     <div class="btns">
-      <label class="f">Periode</label>
-      <select id="fPeriode"><option>Semua</option><option>Hari Ini</option><option>Kemarin</option><option>7 Hari</option><option>30 Hari</option><option>Bulan Ini</option><option>Kuartal Ini</option><option>Tahun Ini</option><option>Custom</option></select>
-      <span id="customBox" class="hidden" style="display:inline-flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:6px 10px">
-        <span class="f" style="margin:0">Dari</span><input type="date" id="cStart" style="background:var(--panel);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:7px;font-size:12px">
-        <span class="f" style="margin:0">s/d</span><input type="date" id="cEnd" style="background:var(--panel);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:7px;font-size:12px">
-        <button class="btn" id="cApply" style="padding:5px 11px;background:#2a2411;border-color:#4a3d17;color:var(--gold2)">Terapkan</button>
-      </span>
+      <div class="dpick">
+        <button class="dp-trigger" id="dpTrigger" onclick="event.stopPropagation();pToggle()">
+          <span id="dpLabel" style="color:var(--muted)">Periode:</span> <b id="dpRange">—</b> <span style="color:var(--muted)">📅</span>
+        </button>
+        <div class="dp-panel hidden" id="dpPanel" onclick="event.stopPropagation()">
+          <div class="dp-left">
+            <button class="dp-preset" onclick="preset('hari')">Hari ini</button>
+            <button class="dp-preset" onclick="preset('7')">7 hari terakhir</button>
+            <button class="dp-preset" onclick="preset('28')">28 hari terakhir</button>
+          </div>
+          <div class="dp-right">
+            <div class="dp-tabs" id="dpTabs">
+              <button data-t="day" onclick="tab('day')">Day</button>
+              <button data-t="minggu" onclick="tab('minggu')">Minggu</button>
+              <button data-t="bulan" onclick="tab('bulan')">Bulan</button>
+              <button data-t="tahun" onclick="tab('tahun')">Tahun</button>
+              <button data-t="kustom" onclick="tab('kustom')">Kustom</button>
+            </div>
+            <div class="dp-calnav">
+              <button onclick="calNav(0,-1)" title="Tahun sebelumnya">«</button>
+              <button onclick="calNav(-1,0)" title="Bulan sebelumnya">‹</button>
+              <span id="dpMonth"></span>
+              <button onclick="calNav(1,0)" title="Bulan berikutnya">›</button>
+              <button onclick="calNav(0,1)" title="Tahun berikutnya">»</button>
+            </div>
+            <div class="dp-grid" id="dpGrid"></div>
+          </div>
+        </div>
+      </div>
       <span class="btn" id="tag" style="color:var(--gold2)">● Live-ready</span>
       <button class="btn" onclick="location.reload()">↻ Refresh</button>
     </div>
@@ -112,8 +155,7 @@
   <div id="tab-overview" class="hidden">
     <div class="ctl"><label class="f">Platform</label>
       <span class="seg" id="ovSeg"><button class="on" data-p="Semua">Semua</button><button data-p="Tiktok">TikTok</button><button data-p="Shopee">Shopee</button></span>
-      <label class="f" style="margin-left:8px">Tampilkan</label>
-      <span class="seg" id="ovGran"><button class="on" data-g="hari">Per Hari</button><button data-g="minggu">Per Minggu</button><button data-g="bulan">Per Bulan</button></span>
+      <span class="sub" style="color:var(--muted);font-size:11px">Granularity tren ikut pilihan di date-picker (Day/Minggu/Bulan/Tahun)</span>
     </div>
     <div class="kpis" id="okpis"></div>
     <div class="two">
@@ -207,26 +249,41 @@ const kpi=(l,v,t)=>`<div class="kpi"><div class="lab">${l}</div><div class="val"
 let DIM='host', OVPLAT='Semua', charts={};
 function mkChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
 const axis={plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{ticks:{color:'#8b949e',callback:v=>(v/1e6)+'jt'},grid:{color:'#1b222b'}}}};
-let GRAN='hari', ACTIVE='live';
-const allDates=()=>[...LIVE.map(d=>d.date),...OV.map(d=>d.date),...MKT.map(d=>d.date)].filter(Boolean).sort();
-const maxDate=()=>{const a=allDates();return a.length?a[a.length-1]:'2026-06-26';};
-function periodWindow(){
-  const p=document.getElementById('fPeriode').value, m=maxDate(), md=new Date(m+'T00:00:00');
-  const iso=d=>d.toISOString().slice(0,10), back=n=>{const x=new Date(md);x.setDate(x.getDate()-n);return iso(x);};
-  switch(p){
-    case 'Hari Ini':return{s:m,e:m};
-    case 'Kemarin':return{s:back(1),e:back(1)};
-    case '7 Hari':return{s:back(6),e:m};
-    case '30 Hari':return{s:back(29),e:m};
-    case 'Bulan Ini':return{s:m.slice(0,8)+'01',e:m};
-    case 'Kuartal Ini':{const q=Math.floor(md.getMonth()/3)*3;return{s:`${md.getFullYear()}-${String(q+1).padStart(2,'0')}-01`,e:m};}
-    case 'Tahun Ini':return{s:md.getFullYear()+'-01-01',e:m};
-    case 'Custom':{const s=document.getElementById('cStart').value,e=document.getElementById('cEnd').value;return (s&&e)?{s,e}:null;}
-    default:return null;
-  }
-}
+let ACTIVE='live', GRAN='hari';
 const inWin=(dt,w)=> !w || !dt || (dt>=w.s && dt<=w.e);
 function weekKey(ds){const d=new Date(ds+'T00:00:00'),j=new Date(d.getFullYear(),0,1),wk=Math.ceil((((d-j)/864e5)+j.getDay()+1)/7);return d.getFullYear()+'-W'+String(wk).padStart(2,'0');}
+// ===== DATE-RANGE PICKER =====
+const TODAY='2026-07-04';
+const iso=d=>d.toISOString().slice(0,10);
+const addDays=(ds,n)=>{const d=new Date(ds+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return iso(d);};
+const fmtD=ds=>new Date(ds+'T00:00:00Z').toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric',timeZone:'UTC'});
+const PS={s:addDays(TODAY,-27),e:TODAY,gran:'day',pickMode:'day',label:'28 hari terakhir',calY:2026,calM:6,ks:null};
+function periodWindow(){return {s:PS.s,e:PS.e};}
+function pToggle(){document.getElementById('dpPanel').classList.toggle('hidden');renderCal();}
+function pClose(){document.getElementById('dpPanel').classList.add('hidden');}
+function granMap(){GRAN= PS.gran==='minggu'?'minggu':(PS.gran==='bulan'||PS.gran==='tahun')?'bulan':'hari';}
+function pApply(){granMap();document.getElementById('dpLabel').textContent=PS.label+':';document.getElementById('dpRange').textContent=(PS.s===PS.e?fmtD(PS.s):fmtD(PS.s)+'  –  '+fmtD(PS.e));setTab(ACTIVE);}
+function preset(m){if(m==='hari'){PS.s=PS.e=TODAY;PS.label='Hari ini';}else if(m==='7'){PS.s=addDays(TODAY,-6);PS.e=TODAY;PS.label='7 hari terakhir';}else{PS.s=addDays(TODAY,-27);PS.e=TODAY;PS.label='28 hari terakhir';}PS.gran='day';PS.pickMode='day';PS.ks=null;pApply();pClose();}
+function tab(t){PS.pickMode=t;PS.ks=null;renderCal();}
+function calNav(dm,dy){PS.calM+=dm;PS.calY+=dy;if(PS.calM<0){PS.calM=11;PS.calY--;}if(PS.calM>11){PS.calM=0;PS.calY++;}renderCal();}
+function pickDay(ds){const m=PS.pickMode;
+  if(m==='day'){PS.s=PS.e=ds;PS.gran='day';PS.label='Hari';}
+  else if(m==='minggu'){const wd=(new Date(ds+'T00:00:00Z').getUTCDay()+6)%7;PS.s=addDays(ds,-wd);PS.e=addDays(PS.s,6);PS.gran='minggu';PS.label='Minggu';}
+  else if(m==='bulan'){const d=new Date(ds+'T00:00:00Z');PS.s=iso(new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1)));PS.e=iso(new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)));PS.gran='bulan';PS.label='Bulan';}
+  else if(m==='tahun'){const y=new Date(ds+'T00:00:00Z').getUTCFullYear();PS.s=y+'-01-01';PS.e=y+'-12-31';PS.gran='tahun';PS.label='Tahun';}
+  else{if(!PS.ks){PS.ks=ds;renderCal();return;}PS.s=PS.ks<ds?PS.ks:ds;PS.e=PS.ks<ds?ds:PS.ks;PS.gran='day';PS.label='Kustom';PS.ks=null;}
+  pApply();pClose();
+}
+function renderCal(){
+  document.querySelectorAll('#dpTabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===PS.pickMode));
+  document.getElementById('dpMonth').textContent=String(PS.calM+1).padStart(2,'0')+' / '+PS.calY;
+  const off=(new Date(Date.UTC(PS.calY,PS.calM,1)).getUTCDay()+6)%7, start=new Date(Date.UTC(PS.calY,PS.calM,1-off));
+  let h='<div class="dp-wd">Sen</div><div class="dp-wd">Sel</div><div class="dp-wd">Rab</div><div class="dp-wd">Kam</div><div class="dp-wd">Jum</div><div class="dp-wd">Sab</div><div class="dp-wd">Min</div>';
+  for(let i=0;i<42;i++){const d=new Date(start);d.setUTCDate(start.getUTCDate()+i);const ds=iso(d),cur=d.getUTCMonth()===PS.calM;
+    const cls=[cur?'':'out', (ds>=PS.s&&ds<=PS.e)?'inr':'', PS.ks===ds?'ks':'', (PS.s===PS.e&&PS.s===ds)?'sel':'', ds===TODAY?'tdy':''].filter(Boolean).join(' ');
+    h+=`<div class="dp-day ${cls}" onclick="pickDay('${ds}')">${d.getUTCDate()}</div>`;}
+  document.getElementById('dpGrid').innerHTML=h;
+}
 
 // ================= LIVE =================
 function initLiveFilters(){
@@ -340,9 +397,7 @@ function setTab(name){
 }
 document.querySelectorAll('.tab[data-tab]').forEach(t=>t.addEventListener('click',()=>setTab(t.dataset.tab)));
 document.querySelectorAll('#ovSeg button').forEach(b=>b.addEventListener('click',()=>{OVPLAT=b.dataset.p;renderOverview();}));
-document.querySelectorAll('#ovGran button').forEach(b=>b.addEventListener('click',()=>{GRAN=b.dataset.g;renderOverview();}));
-document.getElementById('fPeriode').addEventListener('change',()=>{const c=document.getElementById('fPeriode').value==='Custom';document.getElementById('customBox').classList.toggle('hidden',!c);if(!c)setTab(ACTIVE);});
-document.getElementById('cApply').addEventListener('click',()=>setTab(ACTIVE));
+document.addEventListener('click',e=>{const dp=document.querySelector('.dpick');if(dp&&!dp.contains(e.target))document.getElementById('dpPanel').classList.add('hidden');});
 
 async function loadWarehouse(){
   if(!SHEET_ID) return false;
@@ -371,7 +426,7 @@ async function loadWarehouse(){
 async function boot(){
   let live=false; try{live=await loadWarehouse();}catch(e){}
   if(live){tag.textContent='● Live (warehouse)';tag.style.color='var(--green)';document.getElementById('mode').textContent='data warehouse (live)';}
-  initLiveFilters(); setTab('live');
+  initLiveFilters(); pApply();
 }
 boot();
 </script>
