@@ -226,7 +226,7 @@ const MKT=[
 ];
 
 // ================= WAREHOUSE (gviz) =================
-const SHEET_ID="";   // <-- isi ID Google Sheet warehouse (share: Anyone with link = Viewer)
+const SHEET_ID="18oOYXIovDQGyfV2EsHdMnL3heQx3FE0EfjIFs93-0Go";   // warehouse Unified_Live (Apps Script ingest)
 const TABS={live:'Unified_Live', stats:['TikTok_Stats_Harian','Shopee_Stats_Harian'], ads:['TikTok_Ads_Harian','Shopee_Ads_Harian']};
 async function gviz(tab){
   const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(tab)}&headers=1&tqx=out:json&_cb=${Date.now()}`;
