@@ -238,7 +238,7 @@ async function gviz(tab){
     if(i>=0){header=t.rows[i].c.map(c=>((c&&c.v)||'').toString().trim());rows=t.rows.slice(i+1);}
   }
   const idx=n=>header.findIndex(h=>h.toLowerCase()===n.toLowerCase());
-  return rows.map(r=>{const o={};header.forEach((h,i)=>{const c=r.c[i];o[h.toLowerCase()]=c?c.v:null;});return o;});
+  return rows.map(r=>{const o={};header.forEach((h,i)=>{const c=r.c[i];let v=c?c.v:null;if(typeof v==='string'){const m=v.match(/^Date\((\d+),(\d+),(\d+)/);if(m)v=m[1]+'-'+String(+m[2]+1).padStart(2,'0')+'-'+String(+m[3]).padStart(2,'0');}o[h.toLowerCase()]=v;});return o;});
 }
 const N=v=>(v===null||v===undefined||v==='')?0:(typeof v==='number'?v:parseFloat((''+v).replace(/[^0-9.\-]/g,''))||0);
 
