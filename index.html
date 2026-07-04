@@ -241,6 +241,8 @@ async function gviz(tab){
   return rows.map(r=>{const o={};header.forEach((h,i)=>{const c=r.c[i];let v=c?c.v:null;if(typeof v==='string'){const m=v.match(/^Date\((\d+),(\d+),(\d+)/);if(m)v=m[1]+'-'+String(+m[2]+1).padStart(2,'0')+'-'+String(+m[3]).padStart(2,'0');}o[h.toLowerCase()]=v;});return o;});
 }
 const N=v=>(v===null||v===undefined||v==='')?0:(typeof v==='number'?v:parseFloat((''+v).replace(/[^0-9.\-]/g,''))||0);
+function dfromsrc(s){s=(s||'')+'';let m=s.match(/(20\d{2})[-_](\d{2})[-_](\d{2})/);if(m)return m[1]+'-'+m[2]+'-'+m[3];m=s.match(/(\d{2})[-_](\d{2})[-_](20\d{2})/);if(m)return m[3]+'-'+m[2]+'-'+m[1];m=s.match(/(20\d{2})(\d{2})(\d{2})/);if(m)return m[1]+'-'+m[2]+'-'+m[3];return '';}
+const PDATE=o=>{const d=((o.date||'')+'').trim();return /^\d{4}-\d{2}-\d{2}/.test(d)?d:dfromsrc(o.source);};
 
 // ================= HELPERS =================
 const rp=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
@@ -418,14 +420,14 @@ async function loadWarehouse(){
   try{ // OVERVIEW + SUMBER <- *_Stats_Harian
     let all=[], src={live:0,video:0,afil:0};
     for(const [i,tab] of TABS.stats.entries()){const r=await gviz(tab);
-      all=all.concat(r.filter(o=>o.date).map(o=>({date:(o.date||'')+'',platform:i?'Shopee':'Tiktok',gmv:N(o.gmv||o.penjualan_gmv),order:N(o.pesanan),pembeli:N(o.pembeli),pengunjung:N(o.pengunjung),konversi:N(o.persentase_konversi)})));
+      all=all.concat(r.filter(o=>PDATE(o)).map(o=>({date:PDATE(o),platform:i?'Shopee':'Tiktok',gmv:N(o.gmv||o.penjualan_gmv),order:N(o.pesanan),pembeli:N(o.pembeli),pengunjung:N(o.pengunjung),konversi:N(o.persentase_konversi)})));
       if(i===0)r.forEach(o=>{src.live+=N(o.gmv_live_kreator)+N(o.gmv_live_penjual);src.video+=N(o.gmv_video);src.afil+=N(o.gmv_afiliasi);});}
     if(all.length){OV.length=0;OV.push(...all);ok=true;}
     if(src.live||src.video||src.afil){SRC.length=0;SRC.push({sumber:'LIVE Streaming',gmv:src.live},{sumber:'Video / Konten',gmv:src.video},{sumber:'Afiliasi',gmv:src.afil});}
   }catch(e){console.warn('Overview gviz:',e);}
   try{ // MARKETING <- *_Ads_Harian
     let all=[];for(const [i,tab] of TABS.ads.entries()){const r=await gviz(tab);
-      all=all.concat(r.filter(o=>o.date).map(o=>({date:(o.date||'')+'',platform:i?'Shopee':'TikTok',spend:N(o.biaya||o.modal),revenue:N(o.pendapatan_kotor||o.omzet_penjualan),order:N(o.pesanan||o.pesanan_sku)})));}
+      all=all.concat(r.filter(o=>PDATE(o)).map(o=>({date:PDATE(o),platform:i?'Shopee':'TikTok',spend:N(o.biaya||o.modal),revenue:N(o.pendapatan_kotor||o.omzet_penjualan),order:N(o.pesanan||o.pesanan_sku)})));}
     if(all.length){MKT.length=0;MKT.push(...all);ok=true;}
   }catch(e){console.warn('Marketing gviz:',e);}
   return ok;
