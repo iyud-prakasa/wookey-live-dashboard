@@ -128,6 +128,7 @@
     <div class="tab" data-tab="overview">📊 Overview</div>
     <div class="tab" data-tab="marketing">📣 Marketing</div>
     <div class="tab" data-tab="sumber">🎯 Sumber Penjualan</div>
+    <div class="tab" data-tab="market">🔍 Market Scope</div>
   </div>
 
   <!-- ===================== LIVE ===================== -->
@@ -190,6 +191,19 @@
     </div>
   </div>
 
+  <!-- ===================== MARKET SCOPE ===================== -->
+  <div id="tab-market" class="hidden">
+    <div class="ctl"><span class="sub" style="color:var(--muted);font-size:11px">Minat pencarian brand Wookey vs rata-rata Top-5 kompetitor (TikTok brand insight). Granularity ikut date-picker.</span></div>
+    <div class="kpis" id="mskpis"></div>
+    <div class="two">
+      <div class="panel"><h2>Tren Share Kategori</h2><p class="cap">Porsi pencarian Wookey dari kategori (vertical share)</p><canvas id="msShare" height="210"></canvas></div>
+      <div class="panel"><h2>CTR Pencarian: Brand vs Top-5</h2><p class="cap">Click-through hasil pencarian — Wookey vs benchmark</p><canvas id="msCtr" height="210"></canvas></div>
+    </div>
+    <div class="panel"><h2>Wookey vs Benchmark Top-5</h2><p class="cap">Rangkuman periode terpilih. Indeks = Wookey ÷ Top-5.</p>
+      <table id="mstable"><thead><tr><th>Metrik</th><th class="r">Wookey</th><th class="r">Top-5 (Benchmark)</th><th class="r">Indeks</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
   <div class="foot">
     Data contoh (live TikTok+Shopee 26 Jun / 5 Jun 2026; Overview & Marketing ilustrasi). Sambungkan ke warehouse: isi <code>SHEET_ID</code> di bawah + jalankan <b>ingest_wookey_warehouse.py</b>. Tab Live baca <b>Unified_Live</b> (termasuk kolom <b>host</b> dari 02_Master_Host); Overview baca <b>*_Stats_Harian</b>; Marketing baca <b>*_Ads_Harian</b> — semua via gviz, auto-update.
   </div>
@@ -223,6 +237,10 @@ const MKT=[
  {date:'2026-06-26',platform:'Google',spend:1200000,revenue:4080000,order:30},
  {date:'2026-06-26',platform:'TikTok',spend:3800000,revenue:20140000,order:150},
  {date:'2026-06-26',platform:'Shopee',spend:1500000,revenue:9800000,order:88},
+];
+const MS=[
+ {date:'2026-06-20',search_volume:3400,search_bench:205000,vshare:.0025,vshare_bench:.151,unique_users:2400,unique_bench:158000,ctr:.0093,ctr_bench:.0043},
+ {date:'2026-06-21',search_volume:3562,search_bench:212979,vshare:.0026,vshare_bench:.1529,unique_users:2512,unique_bench:160402,ctr:.0095,ctr_bench:.0042},
 ];
 
 // ================= WAREHOUSE (gviz) =================
@@ -391,12 +409,38 @@ function renderSumber(){
     options:{plugins:{legend:{position:'bottom',labels:{color:'#8b949e',font:{size:11}}}}}});
 }
 
+// ================= MARKET SCOPE =================
+function renderMarket(){
+  const win=periodWindow(), rows=MS.filter(d=>inWin(d.date,win)).slice().sort((a,b)=>a.date<b.date?-1:1);
+  const S=k=>rows.reduce((t,d)=>t+(d[k]||0),0), A=k=>rows.length?S(k)/rows.length:0;
+  const sv=S('search_volume'),svb=S('search_bench'),uu=S('unique_users'),uub=S('unique_bench');
+  const vs=A('vshare'),vsb=A('vshare_bench'),ctr=A('ctr'),ctrb=A('ctr_bench');
+  document.getElementById('mskpis').innerHTML=
+    kpi('Volume Pencarian',sv.toLocaleString('id-ID'),rows.length+' hari')+
+    kpi('Share Kategori',pct(vs),'porsi dari kategori')+
+    kpi('CTR Brand',pct(ctr),'benchmark '+pct(ctrb))+
+    kpi('Unique Searchers',uu.toLocaleString('id-ID'))+
+    kpi('Vol. Top-5',svb.toLocaleString('id-ID'),'total pesaing');
+  const keyf=d=> GRAN==='bulan'?d.date.slice(0,7):GRAN==='minggu'?weekKey(d.date):d.date;
+  const keys=[...new Set(rows.map(keyf))].sort();
+  const avgBy=(k,key)=>{const g=rows.filter(d=>keyf(d)===key);return g.length?g.reduce((t,d)=>t+(d[k]||0),0)/g.length:0;};
+  const lab=keys.map(k=>k.length>7?k.slice(5):k);
+  mkChart('msShare',{type:'line',data:{labels:lab,datasets:[{data:keys.map(k=>avgBy('vshare',k)*100),borderColor:'#a06cd5',backgroundColor:'rgba(160,108,213,.15)',fill:true,tension:.3,pointRadius:2}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{ticks:{color:'#8b949e',callback:v=>v+'%'},grid:{color:'#1b222b'}}}}});
+  mkChart('msCtr',{type:'line',data:{labels:lab,datasets:[{label:'Wookey',data:keys.map(k=>avgBy('ctr',k)*100),borderColor:'#3fb98a',fill:false,tension:.3,pointRadius:2},{label:'Top-5',data:keys.map(k=>avgBy('ctr_bench',k)*100),borderColor:'#8b949e',borderDash:[5,4],fill:false,tension:.3,pointRadius:0}]},options:{plugins:{legend:{display:true,labels:{color:'#8b949e',font:{size:11}}}},scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{ticks:{color:'#8b949e',callback:v=>v+'%'},grid:{color:'#1b222b'}}}}});
+  const idx=(a,b)=>b?(a/b*100).toFixed(1)+'%':'—';
+  document.querySelector('#mstable tbody').innerHTML=
+    `<tr><td>Volume Pencarian</td><td class="r">${sv.toLocaleString('id-ID')}</td><td class="r">${svb.toLocaleString('id-ID')}</td><td class="r">${idx(sv,svb)}</td></tr>`+
+    `<tr><td>Unique Searchers</td><td class="r">${uu.toLocaleString('id-ID')}</td><td class="r">${uub.toLocaleString('id-ID')}</td><td class="r">${idx(uu,uub)}</td></tr>`+
+    `<tr><td>CTR</td><td class="r">${pct(ctr)}</td><td class="r">${pct(ctrb)}</td><td class="r">${idx(ctr,ctrb)}</td></tr>`+
+    `<tr><td>Share Kategori</td><td class="r">${pct(vs)}</td><td class="r">${pct(vsb)}</td><td class="r">${idx(vs,vsb)}</td></tr>`;
+}
+
 // ================= TABS + BOOT =================
 function setTab(name){
   ACTIVE=name;
   document.querySelectorAll('.tab[data-tab]').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
-  ['live','overview','marketing','sumber'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('hidden',t!==name));
-  if(name==='live')renderLive();else if(name==='overview')renderOverview();else if(name==='marketing')renderMarketing();else renderSumber();
+  ['live','overview','marketing','sumber','market'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('hidden',t!==name));
+  if(name==='live')renderLive();else if(name==='overview')renderOverview();else if(name==='marketing')renderMarketing();else if(name==='sumber')renderSumber();else renderMarket();
 }
 document.querySelectorAll('.tab[data-tab]').forEach(t=>t.addEventListener('click',()=>setTab(t.dataset.tab)));
 document.querySelectorAll('#ovSeg button').forEach(b=>b.addEventListener('click',()=>{OVPLAT=b.dataset.p;renderOverview();}));
@@ -429,7 +473,11 @@ async function loadWarehouse(){
     let all=[];for(const [i,tab] of TABS.ads.entries()){const r=await gviz(tab);
       all=all.concat(r.filter(o=>PDATE(o)).map(o=>({date:PDATE(o),platform:i?'Shopee':'TikTok',spend:N(o.biaya||o.modal),revenue:N(o.pendapatan_kotor||o.omzet_penjualan),order:N(o.pesanan||o.pesanan_sku)})));}
     if(all.length){MKT.length=0;MKT.push(...all);ok=true;}
-  }catch(e){console.warn('Marketing gviz:',e);}
+  try{ // MARKET SCOPE <- Market_Scope (brand search vs Top-5 benchmark)
+    const r=await gviz('Market_Scope');
+    const rows=r.filter(o=>PDATE(o)).map(o=>({date:PDATE(o),search_volume:N(o.search_volume),search_bench:N(o.search_bench),vshare:N(o.vshare),vshare_bench:N(o.vshare_bench),unique_users:N(o.unique_users),unique_bench:N(o.unique_bench),ctr:N(o.ctr),ctr_bench:N(o.ctr_bench)}));
+    if(rows.length){MS.length=0;MS.push(...rows);ok=true;}
+  }catch(e){console.warn('Market gviz:',e);}
   return ok;
 }
 async function boot(){
