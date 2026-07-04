@@ -409,6 +409,11 @@ async function loadWarehouse(){
       gmv:N(o.live_gmv),order:N(o.jumlah_pesanan),show:N(o.live_show_pv),watch:N(o.live_watch_pv),klik:N(o.klik_produk),pd:N(o.produk_dilihat),menit:N(o.durasi_menit)}));
     if(rows.length){LIVE.length=0;LIVE.push(...rows);ok=true;}
   }catch(e){console.warn('Live gviz:',e);}
+  try{ // HOST <- Master_Host roster (kolom: tanggal, akun, shift, host)
+    const mh=await gviz('Master_Host'), hm={};
+    mh.forEach(o=>{const h=((o.host||'')+'').trim();const t=((o.tanggal||o.date||'')+'').trim();const s=((o.shift||'')+'').trim().toLowerCase();const a=((o.akun||'')+'').trim().toLowerCase();if(h&&t&&a)hm[t+'|'+s+'|'+a]=h;});
+    LIVE.forEach(d=>{const k=(d.date+'')+'|'+((d.shift||'')+'').toLowerCase()+'|'+((d.akun||'')+'').toLowerCase();if(hm[k])d.host=hm[k];});
+  }catch(e){console.warn('Master_Host gviz:',e);}
   try{ // OVERVIEW + SUMBER <- *_Stats_Harian
     let all=[], src={live:0,video:0,afil:0};
     for(const [i,tab] of TABS.stats.entries()){const r=await gviz(tab);
