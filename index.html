@@ -405,7 +405,8 @@ async function loadWarehouse(){
   let ok=false;
   try{ // LIVE <- Unified_Live
     const r=await gviz(TABS.live);
-    const rows=r.filter(o=>o.akun&&(N(o.live_gmv)||N(o.jumlah_pesanan))).map(o=>({platform:(o.platform||'')+'',akun:o.akun+'',host:(o.host||'')+'',shift:(o.shift||'')+'',date:(o.date||'')+'',
+    const _seen=new Set();
+    const rows=r.filter(o=>{const k=((o.source||'')+'').trim()||[o.platform,o.date,o.shift,o.akun].join('|');if(_seen.has(k))return false;_seen.add(k);return true;}).filter(o=>o.akun&&(N(o.live_gmv)||N(o.jumlah_pesanan))).map(o=>({platform:(o.platform||'')+'',akun:o.akun+'',host:(o.host||'')+'',shift:(o.shift||'')+'',date:(o.date||'')+'',
       gmv:N(o.live_gmv),order:N(o.jumlah_pesanan),show:N(o.live_show_pv),watch:N(o.live_watch_pv),klik:N(o.klik_produk),pd:N(o.produk_dilihat),menit:N(o.durasi_menit)}));
     if(rows.length){LIVE.length=0;LIVE.push(...rows);ok=true;}
   }catch(e){console.warn('Live gviz:',e);}
