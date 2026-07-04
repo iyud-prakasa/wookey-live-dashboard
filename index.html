@@ -476,7 +476,7 @@ async function loadWarehouse(){
   }catch(e){console.warn('Marketing gviz:',e);}
   try{ // MARKET SCOPE <- Market_Scope (brand search vs Top-5 benchmark)
     const r=await gviz('Market_Scope');
-    const rows=r.filter(o=>PDATE(o)).map(o=>({date:PDATE(o),search_volume:N(o.search_volume),search_bench:N(o.search_bench),vshare:N(o.vshare),vshare_bench:N(o.vshare_bench),unique_users:N(o.unique_users),unique_bench:N(o.unique_bench),ctr:N(o.ctr),ctr_bench:N(o.ctr_bench)}));
+    const rows=r.filter(o=>PDATE(o)&&(((o.source||'')+'').indexOf('Data overview')>=0)).map(o=>({date:PDATE(o),search_volume:N(o.search_volume),search_bench:N(o.search_bench),vshare:N(o.vshare),vshare_bench:N(o.vshare_bench),unique_users:N(o.unique_users),unique_bench:N(o.unique_bench),ctr:N(o.ctr),ctr_bench:N(o.ctr_bench)}));
     if(rows.length){MS.length=0;MS.push(...rows);ok=true;}
   }catch(e){console.warn('Market gviz:',e);}
   return ok;
