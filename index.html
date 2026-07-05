@@ -86,7 +86,7 @@
   <div class="head">
     <div>
       <h1>Dashboard WOOKEY</h1>
-      <div class="sub" id="sub">Live Streaming · Overview · Marketing — gaya SCM · <b id="mode">snapshot Live NYATA (26 Jun & 3 Jul 2026) · Overview/Marketing contoh</b></div>
+      <div class="sub" id="sub">Live Streaming · Overview · Marketing — gaya SCM · <b id="mode">memuat data warehouse…</b></div>
     </div>
     <div class="btns">
       <div class="dpick">
@@ -186,7 +186,7 @@
       <div class="panel"><h2>GMV per Sumber</h2><p class="cap">Diperingkat</p><div id="sbars"></div></div>
     </div>
     <div class="panel"><h2>Rincian Sumber Penjualan</h2>
-      <p class="cap">LIVE = data nyata dari sesi live. Sumber lain ilustrasi sampai warehouse (kolom GMV per sumber di TikTok_Stats_Harian) terisi.</p>
+      <p class="cap">GMV per sumber (LIVE / Video / Afiliasi) dari kolom GMV di <b>*_Stats_Harian</b> (TikTok + Shopee) — data warehouse.</p>
       <table id="stable"><thead><tr><th>Sumber</th><th class="r">GMV</th><th class="r">% Total</th></tr></thead><tbody></tbody></table>
     </div>
   </div>
@@ -212,7 +212,7 @@
   </div>
 
   <div class="foot">
-    Data contoh (live TikTok+Shopee 26 Jun / 5 Jun 2026; Overview & Marketing ilustrasi). Sambungkan ke warehouse: isi <code>SHEET_ID</code> di bawah + jalankan <b>ingest_wookey_warehouse.py</b>. Tab Live baca <b>Unified_Live</b> (termasuk kolom <b>host</b> dari 02_Master_Host); Overview baca <b>*_Stats_Harian</b>; Marketing baca <b>*_Ads_Harian</b> — semua via gviz, auto-update.
+    Semua tab <b>live dari warehouse</b> (Google Sheets "Data Wookey") via gviz — auto-update tiap pagi (Apps Script <b>runDaily</b> 08.00 WIB). Live baca <b>Unified_Live</b> (+ host dari <b>Master_Host</b>); Overview & Sumber baca <b>*_Stats_Harian</b>; Marketing baca <b>*_Ads_Harian</b>; Market Scope baca <b>Market_Scope / Market_Impressions / Market_Audience</b>. Ranking "By Host" aktif setelah Master_Host diisi.
   </div>
 </div>
 
@@ -255,8 +255,8 @@ const MS_AUD=[{date:'2026-06-18',section:'',label:'Gen Z - low spenders',brand:.
 // ================= WAREHOUSE (gviz) =================
 const SHEET_ID="18oOYXIovDQGyfV2EsHdMnL3heQx3FE0EfjIFs93-0Go";   // warehouse Unified_Live (Apps Script ingest)
 const TABS={live:'Unified_Live', stats:['TikTok_Stats_Harian','Shopee_Stats_Harian'], ads:['TikTok_Ads_Harian','Shopee_Ads_Harian']};
-async function gviz(tab){
-  const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(tab)}&headers=1&tqx=out:json&_cb=${Date.now()}`;
+async function gviz(tab,tq){
+  const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(tab)}&headers=1&tqx=out:json${tq?('&tq='+encodeURIComponent(tq)):''}&_cb=${Date.now()}`;
   const txt=await (await fetch(url)).text();
   const t=JSON.parse(txt.substring(txt.indexOf('{'),txt.lastIndexOf('}')+1)).table;
   let header=t.cols.map(c=>(c.label||'').trim()), rows=t.rows;
@@ -383,12 +383,14 @@ function renderOverview(){
 
 // ================= MARKETING =================
 function renderMarketing(){
-  const win=periodWindow(), rows=MKT.filter(d=>inWin(d.date,win));
-  const S=k=>rows.reduce((t,d)=>t+(d[k]||0),0);
+  const win=periodWindow(), raw=MKT.filter(d=>inWin(d.date,win));
+  const S=k=>raw.reduce((t,d)=>t+(d[k]||0),0);
   const spend=S('spend'),rev=S('revenue'),ord=S('order');
   document.getElementById('mkpis').innerHTML=
     kpi('Total Spend',jt(spend))+kpi('Revenue (Iklan)',jt(rev))+kpi('ROAS',spend?(rev/spend).toFixed(2)+'×':'—','Revenue÷Spend')+
     kpi('Order dari Iklan',ord.toLocaleString('id-ID'))+kpi('CPO',ord?rp(spend/ord):'—','Spend÷Order');
+  const g={};raw.forEach(d=>{const o=g[d.platform]=g[d.platform]||{platform:d.platform,spend:0,revenue:0,order:0};o.spend+=d.spend||0;o.revenue+=d.revenue||0;o.order+=d.order||0;});
+  const rows=Object.values(g).sort((a,b)=>b.spend-a.spend);
   const max=Math.max(...rows.map(m=>m.spend),1);
   document.getElementById('mbars').innerHTML=rows.slice().sort((a,b)=>b.spend-a.spend).map(m=>`<div class="bar-row"><div class="nm">${m.platform}</div>
     <div class="bar-track"><div class="bar-fill" style="width:${Math.max(3,m.spend/max*100)}%"></div></div><div class="bar-val">${jt(m.spend)}</div></div>`).join('');
@@ -491,8 +493,10 @@ async function loadWarehouse(){
     if(all.length){OV.length=0;OV.push(...all);ok=true;}
     if(src.live||src.video||src.afil){SRC.length=0;SRC.push({sumber:'LIVE Streaming',gmv:src.live},{sumber:'Video / Konten',gmv:src.video},{sumber:'Afiliasi',gmv:src.afil});}
   }catch(e){console.warn('Overview gviz:',e);}
-  try{ // MARKETING <- *_Ads_Harian
-    let all=[];for(const [i,tab] of TABS.ads.entries()){const r=await gviz(tab);
+  try{ // MARKETING <- *_Ads_Harian (agregasi per-tanggal di server: 148rb baris -> ~180)
+    const AQ=["select A,sum(E),sum(G),sum(I) group by A label sum(E) 'biaya',sum(G) 'pendapatan_kotor',sum(I) 'pesanan_sku'",
+              "select A,sum(K),sum(J),sum(H) group by A label sum(K) 'biaya',sum(J) 'omzet_penjualan',sum(H) 'pesanan'"];
+    let all=[];for(const [i,tab] of TABS.ads.entries()){const r=await gviz(tab,AQ[i]);
       all=all.concat(r.filter(o=>PDATE(o)).map(o=>({date:PDATE(o),platform:i?'Shopee':'TikTok',spend:N(o.biaya||o.modal),revenue:N(o.pendapatan_kotor||o.omzet_penjualan),order:N(o.pesanan||o.pesanan_sku)})));}
     if(all.length){MKT.length=0;MKT.push(...all);ok=true;}
   }catch(e){console.warn('Marketing gviz:',e);}
