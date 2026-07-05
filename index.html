@@ -202,6 +202,13 @@
     <div class="panel"><h2>Wookey vs Benchmark Top-5</h2><p class="cap">Rangkuman periode terpilih. Indeks = Wookey ÷ Top-5.</p>
       <table id="mstable"><thead><tr><th>Metrik</th><th class="r">Wookey</th><th class="r">Top-5 (Benchmark)</th><th class="r">Indeks</th></tr></thead><tbody></tbody></table>
     </div>
+    <div class="two">
+      <div class="panel"><h2>Impresi: Brand vs Top-5</h2><p class="cap">Total impresi Wookey vs rata-rata Top-5 kompetitor</p><canvas id="msImp" height="210"></canvas></div>
+      <div class="panel"><h2>Profil Audiens vs Top-5</h2><p class="cap">Komposisi audiens Wookey (bar) vs benchmark (garis abu) — periode terpilih. Klik dimensi.</p>
+        <div class="seg" id="audSeg" style="flex-wrap:wrap;margin-bottom:12px"></div>
+        <div id="audBars"></div>
+      </div>
+    </div>
   </div>
 
   <div class="foot">
@@ -242,6 +249,8 @@ const MS=[
  {date:'2026-06-20',search_volume:3400,search_bench:205000,vshare:.0025,vshare_bench:.151,unique_users:2400,unique_bench:158000,ctr:.0093,ctr_bench:.0043},
  {date:'2026-06-21',search_volume:3562,search_bench:212979,vshare:.0026,vshare_bench:.1529,unique_users:2512,unique_bench:160402,ctr:.0095,ctr_bench:.0042},
 ];
+const MS_IMP=[{date:'2026-06-18',impressions:11037671,impressions_bench:23157619,vshare:.0267,vshare_bench:.056}];
+const MS_AUD=[{date:'2026-06-18',section:'',label:'Gen Z - low spenders',brand:.2568,benchmark:.2072}];
 
 // ================= WAREHOUSE (gviz) =================
 const SHEET_ID="18oOYXIovDQGyfV2EsHdMnL3heQx3FE0EfjIFs93-0Go";   // warehouse Unified_Live (Apps Script ingest)
@@ -433,6 +442,19 @@ function renderMarket(){
     `<tr><td>Unique Searchers</td><td class="r">${uu.toLocaleString('id-ID')}</td><td class="r">${uub.toLocaleString('id-ID')}</td><td class="r">${idx(uu,uub)}</td></tr>`+
     `<tr><td>CTR</td><td class="r">${pct(ctr)}</td><td class="r">${pct(ctrb)}</td><td class="r">${idx(ctr,ctrb)}</td></tr>`+
     `<tr><td>Share Kategori</td><td class="r">${pct(vs)}</td><td class="r">${pct(vsb)}</td><td class="r">${idx(vs,vsb)}</td></tr>`;
+  const impR=MS_IMP.filter(d=>inWin(d.date,win)).slice().sort((a,b)=>a.date<b.date?-1:1);
+  const ik=[...new Set(impR.map(keyf))].sort();
+  mkChart('msImp',{type:'line',data:{labels:ik.map(k=>k.length>7?k.slice(5):k),datasets:[{label:'Wookey',data:ik.map(k=>impR.filter(d=>keyf(d)===k).reduce((t,d)=>t+d.impressions,0)),borderColor:'#e8b84b',fill:false,tension:.3,pointRadius:2},{label:'Top-5',data:ik.map(k=>impR.filter(d=>keyf(d)===k).reduce((t,d)=>t+d.impressions_bench,0)),borderColor:'#8b949e',borderDash:[5,4],fill:false,tension:.3,pointRadius:0}]},options:{plugins:{legend:{display:true,labels:{color:'#8b949e',font:{size:11}}}},scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{ticks:{color:'#8b949e',callback:v=>(v/1e6)+'jt'},grid:{color:'#1b222b'}}}}});
+  const audR=MS_AUD.filter(d=>inWin(d.date,win));
+  const secName=s=>s?s:'Personas';
+  const secs=[...new Set(audR.map(d=>secName(d.section)))];
+  if(!window.AUDSEC||secs.indexOf(window.AUDSEC)<0)window.AUDSEC=secs[0]||'Personas';
+  document.getElementById('audSeg').innerHTML=secs.map(s=>`<button class="${s===window.AUDSEC?'on':''}" onclick="window.AUDSEC='${s.replace(/'/g,'')}';renderMarket()">${s}</button>`).join('');
+  const selA=audR.filter(d=>secName(d.section)===window.AUDSEC);
+  const lm={};selA.forEach(d=>{const o=lm[d.label]=lm[d.label]||{b:0,bm:0,n:0};o.b+=d.brand;o.bm+=d.benchmark;o.n++;});
+  const la=Object.keys(lm).map(k=>({label:k,brand:lm[k].b/lm[k].n,bench:lm[k].bm/lm[k].n})).sort((a,b)=>b.brand-a.brand).slice(0,10);
+  const amx=Math.max(...la.map(x=>Math.max(x.brand,x.bench)),0.01);
+  document.getElementById('audBars').innerHTML=la.length?la.map(x=>`<div style="margin:9px 0"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>${x.label}</span><span style="color:var(--gold2)">${pct(x.brand)} <span style="color:var(--muted)">vs ${pct(x.bench)}</span></span></div><div class="bar-track" style="position:relative"><div class="bar-fill" style="width:${Math.max(2,x.brand/amx*100)}%"></div><div title="Top-5" style="position:absolute;top:-2px;left:${Math.min(99,x.bench/amx*100)}%;width:2px;height:24px;background:var(--muted)"></div></div></div>`).join(''):'<p class="cap">Belum ada data audiens untuk periode ini.</p>';
 }
 
 // ================= TABS + BOOT =================
@@ -479,6 +501,16 @@ async function loadWarehouse(){
     const rows=r.filter(o=>PDATE(o)&&(((o.source||'')+'').indexOf('Data overview')>=0)).map(o=>({date:PDATE(o),search_volume:N(o.search_volume),search_bench:N(o.search_bench),vshare:N(o.vshare),vshare_bench:N(o.vshare_bench),unique_users:N(o.unique_users),unique_bench:N(o.unique_bench),ctr:N(o.ctr),ctr_bench:N(o.ctr_bench)}));
     if(rows.length){MS.length=0;MS.push(...rows);ok=true;}
   }catch(e){console.warn('Market gviz:',e);}
+  try{ // MARKET IMPRESSIONS <- Market_Impressions
+    const r=await gviz('Market_Impressions');
+    const rows=r.filter(o=>PDATE(o)).map(o=>({date:PDATE(o),impressions:N(o.impressions),impressions_bench:N(o.impressions_bench),vshare:N(o.vshare),vshare_bench:N(o.vshare_bench)}));
+    if(rows.length){MS_IMP.length=0;MS_IMP.push(...rows);ok=true;}
+  }catch(e){console.warn('Impr gviz:',e);}
+  try{ // MARKET AUDIENCE <- Market_Audience
+    const r=await gviz('Market_Audience');
+    const rows=r.filter(o=>PDATE(o)).map(o=>({date:PDATE(o),section:((o.section||'')+''),label:((o.label||'')+''),brand:N(o.brand),benchmark:N(o.benchmark)}));
+    if(rows.length){MS_AUD.length=0;MS_AUD.push(...rows);ok=true;}
+  }catch(e){console.warn('Aud gviz:',e);}
   return ok;
 }
 async function boot(){
