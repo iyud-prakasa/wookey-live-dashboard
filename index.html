@@ -79,6 +79,28 @@
   .dp-day.ks,.dp-day.sel{background:var(--gold);color:#0b0e11;font-weight:700}
   .dp-day.tdy{outline:1px solid var(--blue)}
   @media(max-width:880px){.cards,.two{grid-template-columns:1fr}.bar-row{grid-template-columns:120px 1fr 96px}}
+  /* ==== interaktivitas ==== */
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#13233a;border:1px solid #2f5488;color:#cfe0ff;border-radius:20px;padding:4px 11px;font-size:12px;cursor:pointer}
+  .chip b{color:#fff}
+  .delta{font-size:11px;font-weight:700;margin-top:4px}
+  .delta.up{color:var(--green)}.delta.down{color:var(--red)}.delta.flat{color:var(--muted)}
+  .fresh{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  .fresh .fi{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+  .fresh .dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
+  .dot.ok{background:var(--green)}.dot.bad{background:var(--red)}
+  .insight{background:linear-gradient(90deg,#13233a,#0f141a);border:1px solid #2f5488;border-radius:12px;padding:12px 16px;margin-top:14px;font-size:13px;color:#cfe0ff;line-height:1.6}
+  .insight b{color:var(--gold2)}
+  .scctl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:4px 0 14px}
+  .scctl input,.scctl select{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:6px 9px;border-radius:8px;font-size:12px;min-width:auto}
+  .scctl label{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+  .sc{cursor:pointer;transition:border-color .15s}
+  .sc:hover{border-color:#2f5488}
+  .sc .det{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
+  .sc .det table{font-size:11px}.sc .det th,.sc .det td{padding:4px 6px}
+  .bar-row.clk{cursor:pointer;border-radius:7px}
+  .bar-row.clk:hover{background:#12161c}
+  .bar-row.clk:hover .nm{color:var(--gold2)}
+  .bar-row.on{background:#2a2411}
 </style>
 </head>
 <body>
@@ -130,6 +152,7 @@
     <div class="tab" data-tab="sumber">🎯 Sumber Penjualan</div>
     <div class="tab" data-tab="market">🔍 Market Scope</div>
   </div>
+  <div class="fresh" id="freshStrip"></div>
 
   <!-- ===================== LIVE ===================== -->
   <div id="tab-live">
@@ -140,8 +163,10 @@
       <div><label class="f">Peringkat</label>
         <span class="seg"><button id="byHost" class="on" onclick="setDim('host')">By Host</button><button id="byAkun" onclick="setDim('akun')">By Akun</button></span>
       </div>
+      <span id="lChip"></span>
     </div>
     <div class="kpis" id="lkpis"></div>
+    <div class="insight hidden" id="lInsight"></div>
     <div class="two">
       <div class="panel"><h2 id="rankTitle">GMV per Host</h2><p class="cap">Omzet live diperingkat.</p><div id="lbars"></div></div>
       <div class="panel"><h2>GMV per Shift</h2><p class="cap">Dalu · Pagi · Siang · Malam</p><canvas id="shiftChart" height="200"></canvas></div>
@@ -149,6 +174,12 @@
     <div class="panel">
       <h2 id="scTitle">Peringkat Host (Scorecard)</h2>
       <p class="cap">Skor = GMV dinormalisasi ke performa teratas (0–100). GMV/Jam = adil lintas durasi. Definisi metrik = master-mu (ERR=Tayangan÷Impresi, CTR=Klik÷Impresi Produk, CTOR=Pesanan÷Klik).</p>
+      <div class="scctl">
+        <input id="scSearch" placeholder="Cari nama…" oninput="renderLive()">
+        <select id="scSort" onchange="renderLive()"><option value="gmv">Urut: GMV</option><option value="gmvjam">Urut: GMV/Jam</option><option value="skor">Urut: Skor</option><option value="order">Urut: Order</option></select>
+        <label><input type="checkbox" id="scMin" onchange="renderLive()"> min 5 sesi</label>
+        <span class="cap" style="margin:0">Klik kartu untuk detail sesi · klik nama di leaderboard untuk fokus.</span>
+      </div>
       <div class="cards" id="lcards"></div>
     </div>
     <div class="panel"><h2>Tren GMV (Top 5)</h2><p class="cap">Perkembangan GMV 5 teratas pada periode &amp; granularity terpilih — lihat siapa naik/turun.</p><canvas id="hostTrend" height="150"></canvas></div>
@@ -276,8 +307,10 @@ const PDATE=o=>{const d=((o.date||'')+'').trim();return /^\d{4}-\d{2}-\d{2}/.tes
 const rp=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
 const jt=n=>{const a=Math.abs(n);return a>=1e12?'Rp'+(n/1e12).toFixed(2)+'T':a>=1e9?'Rp'+(n/1e9).toFixed(1)+'M':a>=1e6?'Rp'+(n/1e6).toFixed(1)+'jt':rp(n);};
 const pct=n=>(n*100).toFixed(1)+'%';
-const kpi=(l,v,t)=>`<div class="kpi"><div class="lab">${l}</div><div class="val">${v}</div><div class="tgt">${t||''}</div></div>`;
-let DIM='host', OVPLAT='Semua', charts={};
+const kpi=(l,v,t,d)=>`<div class="kpi"><div class="lab">${l}</div><div class="val">${v}</div>${d||''}<div class="tgt">${t||''}</div></div>`;
+const deltaHtml=(cur,prev)=>{if(!prev||!isFinite(prev)||prev===0)return '';const p=(cur-prev)/prev*100;const cls=p>1?'up':p<-1?'down':'flat';const ar=p>1?'▲':p<-1?'▼':'▬';return `<div class="delta ${cls}">${ar} ${Math.abs(p).toFixed(0)}% <span style="color:var(--muted);font-weight:400">vs periode lalu</span></div>`;};
+const jsq=s=>(''+s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+let DIM='host', OVPLAT='Semua', charts={}, HOSTF=null, EXPANDED={};
 function mkChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
 const axis={plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{ticks:{color:'#8b949e',callback:v=>v>=1e9?(v/1e9).toFixed(1)+'M':(v/1e6)+'jt'},grid:{color:'#1b222b'}}}};
 let ACTIVE='live', GRAN='hari';
@@ -319,32 +352,72 @@ function renderCal(){
 // ================= LIVE =================
 function initLiveFilters(){
   const s=document.getElementById('lAkun');s.innerHTML='<option>Semua</option>'+[...new Set(LIVE.map(d=>d.akun))].map(a=>`<option>${a}</option>`).join('');
-  ['lPlat','lAkun','lShift'].forEach(id=>document.getElementById(id).addEventListener('change',renderLive));
+  ['lPlat','lAkun','lShift'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{HOSTF=null;renderLive();}));
 }
-function setDim(d){DIM=d;byHost.classList.toggle('on',d==='host');byAkun.classList.toggle('on',d==='akun');
+function setDim(d){DIM=d;HOSTF=null;EXPANDED={};byHost.classList.toggle('on',d==='host');byAkun.classList.toggle('on',d==='akun');
   rankTitle.textContent='GMV per '+(d==='host'?'Host':'Akun');scTitle.textContent='Peringkat '+(d==='host'?'Host':'Akun')+' (Scorecard)';renderLive();}
+function prevWindow(){const w=periodWindow();const s=new Date(w.s+'T00:00:00Z'),e=new Date(w.e+'T00:00:00Z');const len=Math.round((e-s)/864e5)+1;const pe=addDays(w.s,-1),ps=addDays(pe,-(len-1));return {s:ps,e:pe};}
+function pickHost(nm){HOSTF=nm;renderLive();}
+function toggleCard(nm){EXPANDED[nm]=!EXPANDED[nm];renderLive();}
+function cardDetail(nm,rows,hostOf){
+  const byd={};rows.filter(d=>hostOf(d)===nm).forEach(d=>{byd[d.date]=byd[d.date]||{gmv:0,order:0};byd[d.date].gmv+=d.gmv||0;byd[d.date].order+=d.order||0;});
+  const rows2=Object.entries(byd).sort((a,b)=>a[0]<b[0]?1:-1).slice(0,12);
+  return `<div class="det"><table><thead><tr><th>Tanggal</th><th class="r">GMV</th><th class="r">Order</th></tr></thead><tbody>${rows2.map(([d,o])=>`<tr><td>${d.slice(5)}</td><td class="r">${jt(o.gmv)}</td><td class="r">${o.order}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function renderInsight(rows,list,sh,sd){
+  const el=document.getElementById('lInsight');if(!el)return;
+  if(!rows.length){el.classList.add('hidden');return;}
+  const bits=[];let bi=0;sd.forEach((v,i)=>{if(v>sd[bi])bi=i;});
+  if(sd[bi]>0)bits.push(`Shift <b>${sh[bi]}</b> paling produktif (${jt(sd[bi])}).`);
+  const tot=list.reduce((t,h)=>t+h.gmv,0)||1;
+  if(list[0]&&!HOSTF)bits.push(`${DIM==='host'?'Host':'Akun'} teratas <b>${list[0].nm}</b> — ${jt(list[0].gmv)} (${Math.round(list[0].gmv/tot*100)}% dari total).`);
+  const eff=list.filter(h=>h.n>=5).slice().sort((a,b)=>b.gmvjam-a.gmvjam)[0];
+  if(eff)bits.push(`Paling efisien: <b>${eff.nm}</b> — ${jt(eff.gmvjam)}/jam.`);
+  el.innerHTML='💡 '+bits.join(' ');el.classList.remove('hidden');
+}
+function renderFresh(){
+  const el=document.getElementById('freshStrip');if(!el)return;
+  const mx=a=>(a||[]).reduce((m,d)=>{const dt=(d.date||'')+'';return dt>m?dt:m;},'');
+  const cut=addDays(TODAY,-1);
+  const srcs=[['Live',mx(LIVE)],['Toko',mx(OV)],['Iklan',mx(MKT)],['Market Scope',mx(MS)]];
+  el.innerHTML=srcs.filter(s=>s[1]).map(([nm,dt])=>{const ok=dt>=cut;return `<span class="fi" title="${ok?'terbaru':'ketinggalan'}"><span class="dot ${ok?'ok':'bad'}"></span>${nm}: ${dt}</span>`;}).join('')+`<span class="fi">🔄 dianggap terbaru bila ≥ ${cut}</span>`;
+}
 function renderLive(){
   const p=lPlat.value,a=lAkun.value,s=lShift.value,win=periodWindow();
-  const rows=LIVE.filter(d=>(p=='Semua'||d.platform==p)&&(a=='Semua'||d.akun==a)&&(s=='Semua'||d.shift==s)&&inWin(d.date,win));
-  const S=k=>rows.reduce((t,d)=>t+(d[k]||0),0);
-  const gmv=S('gmv'),ord=S('order'),show=S('show'),watch=S('watch'),klik=S('klik'),pd=S('pd'),menit=S('menit');
+  const base=d=>(p=='Semua'||d.platform==p)&&(a=='Semua'||d.akun==a)&&(s=='Semua'||d.shift==s);
+  const hostOf=d=>d[DIM]||(DIM==='host'?'⚠ Tanpa host':'(kosong)');
+  let rows=LIVE.filter(d=>base(d)&&inWin(d.date,win));
+  if(HOSTF){const f=rows.filter(d=>hostOf(d)===HOSTF);if(f.length)rows=f;else HOSTF=null;}
+  const S=(arr,k)=>arr.reduce((t,d)=>t+(d[k]||0),0);
+  const gmv=S(rows,'gmv'),ord=S(rows,'order'),show=S(rows,'show'),watch=S(rows,'watch'),klik=S(rows,'klik'),pd=S(rows,'pd'),menit=S(rows,'menit');
+  const pw=prevWindow();let prows=LIVE.filter(d=>base(d)&&inWin(d.date,pw));if(HOSTF)prows=prows.filter(d=>hostOf(d)===HOSTF);
+  const pgmv=S(prows,'gmv'),pord=S(prows,'order'),pmenit=S(prows,'menit');
+  document.getElementById('lChip').innerHTML=HOSTF?`<span class="chip" onclick="pickHost(null)">Fokus: <b>${HOSTF}</b> ✕</span>`:'';
   document.getElementById('lkpis').innerHTML=
-    kpi('Total GMV',jt(gmv),rows.length+' sesi live')+kpi('Total Order',ord.toLocaleString('id-ID'))+
+    kpi('Total GMV',jt(gmv),rows.length+' sesi live',deltaHtml(gmv,pgmv))+kpi('Total Order',ord.toLocaleString('id-ID'),'',deltaHtml(ord,pord))+
     kpi('AOV',ord?rp(gmv/ord):'—','GMV÷Order')+kpi('Live Show PV',show.toLocaleString('id-ID'),'Impresi')+
     kpi('Live Watch PV',watch.toLocaleString('id-ID'),'Tayangan')+kpi('ERR',show?pct(watch/show):'—','Watch÷Show')+
     kpi('CTR',pd?pct(klik/pd):'—','Klik÷Imp.Produk')+kpi('CTOR',klik?pct(ord/klik):'—','Order÷Klik')+
-    kpi('GMV / Jam',menit?jt(gmv/(menit/60)):'—');
-  const g={};rows.forEach(d=>{const key=d[DIM]||(DIM==='host'?'⚠ Tanpa host':'(kosong)');const o=g[key]=g[key]||{gmv:0,order:0,show:0,watch:0,klik:0,pd:0,menit:0,n:0,akun:d.akun};
+    kpi('GMV / Jam',menit?jt(gmv/(menit/60)):'—','',deltaHtml(menit?gmv/(menit/60):0,pmenit?pgmv/(pmenit/60):0));
+  const g={};rows.forEach(d=>{const key=hostOf(d);const o=g[key]=g[key]||{gmv:0,order:0,show:0,watch:0,klik:0,pd:0,menit:0,n:0,akun:d.akun};
     ['gmv','order','show','watch','klik','pd','menit'].forEach(k=>o[k]+=d[k]||0);o.n++;});
-  const list=Object.entries(g).map(([nm,o])=>({nm,...o,aov:o.order?o.gmv/o.order:0,err:o.show?o.watch/o.show:null,
+  const listAll=Object.entries(g).map(([nm,o])=>({nm,...o,aov:o.order?o.gmv/o.order:0,err:o.show?o.watch/o.show:null,
     ctr:o.pd?o.klik/o.pd:null,ctor:o.klik?o.order/o.klik:null,gmvjam:o.menit?o.gmv/(o.menit/60):0})).sort((a,b)=>b.gmv-a.gmv);
-  const max=Math.max(...list.map(h=>h.gmv),1);
-  document.getElementById('lbars').innerHTML=list.map(h=>`<div class="bar-row"><div class="nm">${h.nm}</div>
+  const max=Math.max(...listAll.map(h=>h.gmv),1);listAll.forEach(h=>h.skor=Math.round(h.gmv/max*100));
+  document.getElementById('lbars').innerHTML=listAll.map(h=>`<div class="bar-row clk ${HOSTF===h.nm?'on':''}" onclick="pickHost('${jsq(h.nm)}')"><div class="nm">${h.nm}</div>
     <div class="bar-track"><div class="bar-fill" style="width:${Math.max(3,h.gmv/max*100)}%"></div></div><div class="bar-val">${jt(h.gmv)}</div></div>`).join('');
-  document.getElementById('lcards').innerHTML=list.map((h,i)=>{const sc=Math.round(h.gmv/max*100),
+  const q=(document.getElementById('scSearch')?document.getElementById('scSearch').value:'').toLowerCase().trim();
+  const sortk=document.getElementById('scSort')?document.getElementById('scSort').value:'gmv';
+  const minOn=document.getElementById('scMin')&&document.getElementById('scMin').checked;
+  let cards=listAll.slice();
+  if(q)cards=cards.filter(h=>h.nm.toLowerCase().includes(q));
+  if(minOn)cards=cards.filter(h=>h.n>=5);
+  const sk={gmv:'gmv',gmvjam:'gmvjam',skor:'skor',order:'order'}[sortk]||'gmv';
+  cards.sort((x,y)=>y[sk]-x[sk]);
+  document.getElementById('lcards').innerHTML=cards.map((h,i)=>{const sc=h.skor,
     b=sc>=80?'b-good':sc>=45?'b-mid':'b-low',bt=sc>=80?'Sangat baik':sc>=45?'Baik':'Perlu dorong',
-    col=sc>=80?'var(--green)':sc>=45?'var(--gold2)':'var(--red)',rel=h.n>=5;
-    return `<div class="sc"><div class="top"><span class="rk">#${i+1}</span><span class="score" style="color:${col}">${sc}</span></div>
+    col=sc>=80?'var(--green)':sc>=45?'var(--gold2)':'var(--red)',rel=h.n>=5,ex=EXPANDED[h.nm];
+    return `<div class="sc" onclick="toggleCard('${jsq(h.nm)}')"><div class="top"><span class="rk">#${i+1}</span><span class="score" style="color:${col}">${sc}</span></div>
       <div class="nm">${h.nm}</div><div class="ak">${DIM==='host'?h.akun+' · ':''}${h.n} sesi</div><span class="badge ${b}">${bt}</span>${rel?'':' <span class="badge b-low" title="Rasio disembunyikan: sesi terlalu sedikit">⚠ sampel kecil</span>'}
       <div class="grid4">
         <div class="m"><div class="l">GMV</div><div class="v">${jt(h.gmv)}</div></div>
@@ -356,16 +429,16 @@ function renderLive(){
         <div class="m"><div class="l">ERR</div><div class="v">${rel&&h.err!=null?pct(h.err):'—'}</div></div>
         <div class="m"><div class="l">CTR</div><div class="v">${rel&&h.ctr!=null?pct(h.ctr):'—'}</div></div>
         <div class="m"><div class="l">CTOR</div><div class="v">${rel&&h.ctor!=null?pct(h.ctor):'—'}</div></div>
-      </div></div>`;}).join('');
+      </div>${ex?cardDetail(h.nm,rows,hostOf):''}</div>`;}).join('');
   const sh=['Dalu','Pagi','Siang','Malam'],sd=sh.map(x=>rows.filter(d=>d.shift==x).reduce((t,d)=>t+d.gmv,0));
   mkChart('shiftChart',{type:'bar',data:{labels:sh,datasets:[{data:sd,backgroundColor:'#e8b84b',borderRadius:6}]},options:axis});
-  // Tren GMV Top-5 (per host/akun sesuai DIM, ikut periode & granularity)
-  const top5=list.slice(0,5).map(h=>h.nm);
+  const top5=listAll.slice(0,5).map(h=>h.nm);
   const tkeyf=d=>GRAN==='bulan'?(d.date+'').slice(0,7):GRAN==='minggu'?weekKey(d.date):d.date;
   const tkeys=[...new Set(rows.map(tkeyf))].sort();
   const tpal=['#e8b84b','#4c8bf5','#3fb98a','#a06cd5','#e5716b'];
-  const tds=top5.map((nm,ci)=>({label:nm,data:tkeys.map(k=>rows.filter(d=>(d[DIM]||(DIM==='host'?'⚠ Tanpa host':'(kosong)'))===nm&&tkeyf(d)===k).reduce((t,d)=>t+(d.gmv||0),0)),borderColor:tpal[ci%5],backgroundColor:'transparent',tension:.3,pointRadius:2}));
+  const tds=top5.map((nm,ci)=>({label:nm,data:tkeys.map(k=>rows.filter(d=>hostOf(d)===nm&&tkeyf(d)===k).reduce((t,d)=>t+(d.gmv||0),0)),borderColor:tpal[ci%5],backgroundColor:'transparent',tension:.3,pointRadius:2}));
   mkChart('hostTrend',{type:'line',data:{labels:tkeys.map(k=>k.length>7?k.slice(5):k),datasets:tds},options:{plugins:{legend:{display:true,labels:{color:'#8b949e',font:{size:11}}}},scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{ticks:{color:'#8b949e',callback:v=>v>=1e9?(v/1e9).toFixed(1)+'M':(v/1e6)+'jt'},grid:{color:'#1b222b'}}}}});
+  renderInsight(rows,listAll,sh,sd);
 }
 
 // ================= OVERVIEW =================
@@ -537,7 +610,7 @@ async function boot(){
   if(live){tag.textContent='● Live (warehouse)';tag.style.color='var(--green)';document.getElementById('mode').textContent='data warehouse (live)';}
   try{const _all=[].concat(LIVE.map(d=>d.date),OV.map(d=>d.date),MKT.map(d=>d.date)).filter(d=>/^\d{4}-\d{2}-\d{2}/.test((d||'')+''));
     if(_all.length){TODAY=_all.sort().slice(-1)[0];PS.e=TODAY;PS.s=addDays(TODAY,-27);PS.calY=+TODAY.slice(0,4);PS.calM=+TODAY.slice(5,7)-1;}}catch(e){}
-  initLiveFilters(); pApply();
+  initLiveFilters(); pApply(); try{renderFresh();}catch(e){}
 }
 boot();
 </script>
