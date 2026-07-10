@@ -57,27 +57,44 @@
   .foot{color:var(--muted);font-size:11px;text-align:center;margin:26px 0 8px;line-height:1.6}
   .hidden{display:none}
   .dpick{position:relative;display:inline-block}
-  .dp-trigger{background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
-  .dp-panel{position:absolute;top:46px;left:0;z-index:60;display:flex;background:#0f141a;border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 34px rgba(0,0,0,.55)}
+  .dp-trigger{background:#fff;border:1.5px solid #1ba39a;color:#2b2b2b;border-radius:10px;padding:10px 14px;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:9px}
+  .dp-trigger .dp-lab{color:#6b7280}
+  .dp-trigger .dp-rng{color:#2b2b2b;font-weight:600}
+  .dp-trigger .dp-ic{display:inline-flex;margin-left:2px}
+  .dp-panel{position:absolute;top:54px;right:0;z-index:60;display:flex;background:#fff;border:1px solid #ececec;border-radius:14px;box-shadow:0 16px 44px rgba(0,0,0,.3);color:#2b2b2b;overflow:hidden}
   .dp-panel.hidden{display:none}
-  .dp-left{display:flex;flex-direction:column;gap:8px;padding:14px;border-right:1px solid var(--border);min-width:158px}
-  .dp-preset{background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:12px;cursor:pointer}
-  .dp-preset:hover{border-color:var(--blue);color:#cfe0ff}
-  .dp-right{padding:14px;width:340px}
-  .dp-tabs{display:flex;gap:4px;margin-bottom:12px}
-  .dp-tabs button{flex:1;background:var(--panel);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:7px 0;font-size:12px;cursor:pointer}
-  .dp-tabs button.on{background:#12233a;border-color:#2f5488;color:#cfe0ff}
-  .dp-calnav{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px;color:var(--text)}
-  .dp-calnav button{background:none;border:0;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px}
-  .dp-calnav #dpMonth{font-weight:700;min-width:100px;text-align:center}
-  .dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-  .dp-wd{color:var(--muted);font-size:11px;text-align:center;padding:4px 0}
-  .dp-day{text-align:center;padding:8px 0;font-size:13px;border-radius:7px;cursor:pointer;color:var(--text)}
-  .dp-day:hover{background:#1b222b}
-  .dp-day.out{color:#39424d;cursor:default}
-  .dp-day.inr{background:#2a2411;color:var(--gold2)}
-  .dp-day.ks,.dp-day.sel{background:var(--gold);color:#0b0e11;font-weight:700}
-  .dp-day.tdy{outline:1px solid var(--blue)}
+  .dp-left{display:flex;flex-direction:column;gap:12px;padding:18px 16px;border-right:1px solid #eee;min-width:172px}
+  .dp-preset{background:#fff;border:1px solid #dcdcdc;color:#3a3a3a;border-radius:9px;padding:11px 12px;font-size:13px;cursor:pointer;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dp-preset:hover{border-color:#1ba39a}
+  .dp-preset.on{border-color:#1ba39a;color:#1ba39a;font-weight:600}
+  .dp-right{padding:16px 18px}
+  .dp-tabs{display:flex;gap:2px;justify-content:flex-end;margin-bottom:12px}
+  .dp-tabs button{background:#fff;border:1px solid transparent;color:#4a4a4a;border-radius:8px;padding:7px 15px;font-size:13px;cursor:pointer}
+  .dp-tabs button.on{border-color:#1ba39a;color:#1ba39a;font-weight:600}
+  .dp-cals{display:flex;gap:28px}
+  .dp-cal{width:262px}
+  .dp-calnav{display:flex;align-items:center;gap:6px;margin:2px 0 10px;color:#3a3a3a}
+  .dp-calnav .dp-mon{flex:1;text-align:center;font-weight:700;font-size:15px;letter-spacing:.5px}
+  .dp-calnav button{background:none;border:0;color:#9aa0a6;font-size:17px;cursor:pointer;padding:2px 5px;line-height:1}
+  .dp-calnav button:hover{color:#1ba39a}
+  .dp-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+  .dp-wd{color:#9aa0a6;font-size:12px;text-align:center;padding:6px 0}
+  .dp-day{position:relative;text-align:center;padding:9px 0;font-size:13px;cursor:pointer;color:#2b2b2b}
+  .dp-day:hover{background:#f2f2f2;border-radius:8px}
+  .dp-day.out{color:#c7ccd1;cursor:default}
+  .dp-day.out:hover,.dp-day.off:hover{background:none}
+  .dp-day.off{color:#c9ced3;cursor:not-allowed}
+  .dp-day.inr{background:#e3f4f1}
+  .dp-day.sel,.dp-day.rs,.dp-day.re{background:#1ba39a;color:#fff;font-weight:700;border-radius:8px}
+  .dp-day.gbg{background:#f0f0f0;border-radius:8px}
+  .dp-day.today::after{content:"";position:absolute;left:50%;bottom:3px;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#1ba39a}
+  .dp-day.sel.today::after,.dp-day.rs.today::after,.dp-day.re.today::after{background:#fff}
+  .dp-months{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 12px;margin-top:6px}
+  .dp-mon{position:relative;text-align:center;padding:16px 0;font-size:14px;cursor:pointer;color:#2b2b2b;border-radius:8px}
+  .dp-mon:hover{background:#f2f2f2}
+  .dp-mon.on{color:#1ba39a;font-weight:700}
+  .dp-mon.off{color:#c9ced3;background:#f6f6f6;cursor:not-allowed}
+  .dp-mon.today::after{content:"";position:absolute;left:50%;bottom:6px;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:#1ba39a}
   @media(max-width:880px){.cards,.two{grid-template-columns:1fr}.bar-row{grid-template-columns:120px 1fr 96px}}
   /* ==== interaktivitas ==== */
   .chip{display:inline-flex;align-items:center;gap:6px;background:#13233a;border:1px solid #2f5488;color:#cfe0ff;border-radius:20px;padding:4px 11px;font-size:12px;cursor:pointer}
@@ -113,31 +130,16 @@
     <div class="btns">
       <div class="dpick">
         <button class="dp-trigger" id="dpTrigger" onclick="event.stopPropagation();pToggle()">
-          <span id="dpLabel" style="color:var(--muted)">Periode:</span> <b id="dpRange">—</b> <span style="color:var(--muted)">📅</span>
+          <span class="dp-lab" id="dpLabel">Hari ini:</span> <span class="dp-rng" id="dpRange">—</span>
+          <span class="dp-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa0a6" stroke-width="2" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
         </button>
         <div class="dp-panel hidden" id="dpPanel" onclick="event.stopPropagation()">
           <div class="dp-left">
-            <button class="dp-preset" onclick="preset('hari')">Hari ini</button>
-            <button class="dp-preset" onclick="preset('7')">7 hari terakhir</button>
-            <button class="dp-preset" onclick="preset('28')">28 hari terakhir</button>
+            <button class="dp-preset" data-p="hari" onclick="preset('hari')">Hari ini</button>
+            <button class="dp-preset" data-p="7" onclick="preset('7')">7 hari terakhir</button>
+            <button class="dp-preset" data-p="28" onclick="preset('28')">28 hari terakhir</button>
           </div>
-          <div class="dp-right">
-            <div class="dp-tabs" id="dpTabs">
-              <button data-t="day" onclick="tab('day')">Day</button>
-              <button data-t="minggu" onclick="tab('minggu')">Minggu</button>
-              <button data-t="bulan" onclick="tab('bulan')">Bulan</button>
-              <button data-t="tahun" onclick="tab('tahun')">Tahun</button>
-              <button data-t="kustom" onclick="tab('kustom')">Kustom</button>
-            </div>
-            <div class="dp-calnav">
-              <button onclick="calNav(0,-1)" title="Tahun sebelumnya">«</button>
-              <button onclick="calNav(-1,0)" title="Bulan sebelumnya">‹</button>
-              <span id="dpMonth"></span>
-              <button onclick="calNav(1,0)" title="Bulan berikutnya">›</button>
-              <button onclick="calNav(0,1)" title="Tahun berikutnya">»</button>
-            </div>
-            <div class="dp-grid" id="dpGrid"></div>
-          </div>
+          <div class="dp-right" id="dpRight"></div>
         </div>
       </div>
       <span class="btn" id="tag" style="color:var(--gold2)">● Live-ready</span>
@@ -321,32 +323,61 @@ let TODAY='2026-07-04';  // fallback; di-anchor ke tanggal data terbaru saat boo
 const iso=d=>d.toISOString().slice(0,10);
 const addDays=(ds,n)=>{const d=new Date(ds+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return iso(d);};
 const fmtD=ds=>new Date(ds+'T00:00:00Z').toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric',timeZone:'UTC'});
-const PS={s:addDays(TODAY,-27),e:TODAY,gran:'day',pickMode:'day',label:'28 hari terakhir',calY:2026,calM:6,ks:null};
+const PS={s:addDays(TODAY,-27),e:TODAY,gran:'day',pickMode:'kustom',label:'28 hari terakhir',calY:2026,calM:6,ks:null};
 function periodWindow(){return {s:PS.s,e:PS.e};}
-function pToggle(){document.getElementById('dpPanel').classList.toggle('hidden');renderCal();}
+const MON=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const WD=['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
+function pToggle(){const p=document.getElementById('dpPanel');p.classList.toggle('hidden');if(!p.classList.contains('hidden'))renderCal();}
 function pClose(){document.getElementById('dpPanel').classList.add('hidden');}
-function granMap(){GRAN= PS.gran==='minggu'?'minggu':(PS.gran==='bulan'||PS.gran==='tahun')?'bulan':'hari';}
-function pApply(){granMap();document.getElementById('dpLabel').textContent=PS.label+':';document.getElementById('dpRange').textContent=(PS.s===PS.e?fmtD(PS.s):fmtD(PS.s)+'  –  '+fmtD(PS.e));setTab(ACTIVE);}
-function preset(m){if(m==='hari'){PS.s=PS.e=TODAY;PS.label='Hari ini';}else if(m==='7'){PS.s=addDays(TODAY,-6);PS.e=TODAY;PS.label='7 hari terakhir';}else{PS.s=addDays(TODAY,-27);PS.e=TODAY;PS.label='28 hari terakhir';}PS.gran='day';PS.pickMode='day';PS.ks=null;pApply();pClose();}
+function granMap(){GRAN=PS.pickMode==='minggu'?'minggu':PS.pickMode==='bulan'?'bulan':'hari';}
+function pApply(){granMap();document.getElementById('dpLabel').textContent=PS.label+':';document.getElementById('dpRange').textContent=fmtD(PS.s)+'  –  '+fmtD(PS.e);setTab(ACTIVE);}
+function preset(m){if(m==='hari'){PS.s=PS.e=TODAY;PS.label='Hari ini';PS.pickMode='day';}else if(m==='7'){PS.s=addDays(TODAY,-6);PS.e=TODAY;PS.label='7 hari terakhir';PS.pickMode='kustom';}else{PS.s=addDays(TODAY,-27);PS.e=TODAY;PS.label='28 hari terakhir';PS.pickMode='kustom';}PS.ks=null;PS.calY=+PS.s.slice(0,4);PS.calM=+PS.s.slice(5,7)-1;pApply();pClose();}
 function tab(t){PS.pickMode=t;PS.ks=null;renderCal();}
 function calNav(dm,dy){PS.calM+=dm;PS.calY+=dy;if(PS.calM<0){PS.calM=11;PS.calY--;}if(PS.calM>11){PS.calM=0;PS.calY++;}renderCal();}
-function pickDay(ds){const m=PS.pickMode;
-  if(m==='day'){PS.s=PS.e=ds;PS.gran='day';PS.label='Hari';}
-  else if(m==='minggu'){const wd=(new Date(ds+'T00:00:00Z').getUTCDay()+6)%7;PS.s=addDays(ds,-wd);PS.e=addDays(PS.s,6);PS.gran='minggu';PS.label='Minggu';}
-  else if(m==='bulan'){const d=new Date(ds+'T00:00:00Z');PS.s=iso(new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1)));PS.e=iso(new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)));PS.gran='bulan';PS.label='Bulan';}
-  else if(m==='tahun'){const y=new Date(ds+'T00:00:00Z').getUTCFullYear();PS.s=y+'-01-01';PS.e=y+'-12-31';PS.gran='tahun';PS.label='Tahun';}
-  else{if(!PS.ks){PS.ks=ds;renderCal();return;}PS.s=PS.ks<ds?PS.ks:ds;PS.e=PS.ks<ds?ds:PS.ks;PS.gran='day';PS.label='Kustom';PS.ks=null;}
+function pickDay(ds){if(ds>TODAY)return;const m=PS.pickMode;
+  if(m==='day'){PS.s=PS.e=ds;PS.label=(ds===TODAY?'Hari ini':'Harian');}
+  else if(m==='minggu'){const wd=(new Date(ds+'T00:00:00Z').getUTCDay()+6)%7;PS.s=addDays(ds,-wd);PS.e=addDays(PS.s,6);if(PS.e>TODAY)PS.e=TODAY;PS.label='Minggu';}
+  else{if(!PS.ks){PS.ks=ds;renderCal();return;}PS.s=PS.ks<ds?PS.ks:ds;PS.e=PS.ks<ds?ds:PS.ks;PS.label='Kustom';PS.ks=null;}
   pApply();pClose();
 }
+function pickMonth(y,mo){const first=y+'-'+String(mo+1).padStart(2,'0')+'-01';if(first>TODAY)return;PS.s=first;let last=iso(new Date(Date.UTC(y,mo+1,0)));if(last>TODAY)last=TODAY;PS.e=last;PS.label='Bulan';PS.pickMode='bulan';pApply();pClose();}
+function calMonthHtml(y,mo,side){
+  const off=(new Date(Date.UTC(y,mo,1)).getUTCDay()+6)%7, start=new Date(Date.UTC(y,mo,1-off));
+  let h='<div class="dp-calnav">';
+  if(side===false||side==='L')h+='<button onclick="calNav(0,-1)" title="Tahun -">&laquo;</button><button onclick="calNav(-1,0)" title="Bulan -">&lsaquo;</button>';
+  h+='<span class="dp-mon">'+String(mo+1).padStart(2,'0')+' / '+y+'</span>';
+  if(side===false||side==='R')h+='<button onclick="calNav(1,0)" title="Bulan +">&rsaquo;</button><button onclick="calNav(0,1)" title="Tahun +">&raquo;</button>';
+  h+='</div><div class="dp-grid">'+WD.map(function(w){return '<div class="dp-wd">'+w+'</div>';}).join('');
+  for(let i=0;i<42;i++){const d=new Date(start);d.setUTCDate(start.getUTCDate()+i);const ds=iso(d),cur=d.getUTCMonth()===mo;
+    let cls=[];if(!cur)cls.push('out');if(ds>TODAY)cls.push('off');if(ds===TODAY)cls.push('today');
+    if(cur&&ds<=TODAY){
+      if(PS.s===PS.e&&ds===PS.s)cls.push('sel');
+      else if(ds===PS.s&&PS.s!==PS.e)cls.push('rs');
+      else if(ds===PS.e&&PS.s!==PS.e)cls.push('re');
+      else if(ds>PS.s&&ds<PS.e)cls.push('inr');
+      else if(PS.ks&&ds===PS.ks)cls.push('rs');
+    }
+    if(ds===TODAY&&cls.indexOf('sel')<0&&cls.indexOf('rs')<0&&cls.indexOf('re')<0&&cls.indexOf('inr')<0)cls.push('gbg');
+    const clk=(cur&&ds<=TODAY)?(' onclick="pickDay(\''+ds+'\')"'):'';
+    h+='<div class="dp-day '+cls.join(' ')+'"'+clk+'>'+d.getUTCDate()+'</div>';
+  }
+  return h+'</div>';
+}
+function monthsHtml(y){
+  let h='<div class="dp-calnav"><button onclick="calNav(0,-1)">&laquo;</button><span class="dp-mon">'+y+'</span><button onclick="calNav(0,1)">&raquo;</button></div><div class="dp-months">';
+  const tY=+TODAY.slice(0,4),tM=+TODAY.slice(5,7)-1,sY=+PS.s.slice(0,4),sM=+PS.s.slice(5,7)-1;
+  for(let mo=0;mo<12;mo++){const future=(y>tY)||(y===tY&&mo>tM),on=(PS.pickMode==='bulan'&&y===sY&&mo===sM),today=(y===tY&&mo===tM);
+    h+='<div class="dp-mon '+(future?'off ':'')+(on?'on ':'')+(today?'today':'')+'"'+(future?'':(' onclick="pickMonth('+y+','+mo+')"'))+'>'+MON[mo]+'</div>';}
+  return h+'</div>';
+}
 function renderCal(){
-  document.querySelectorAll('#dpTabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===PS.pickMode));
-  document.getElementById('dpMonth').textContent=String(PS.calM+1).padStart(2,'0')+' / '+PS.calY;
-  const off=(new Date(Date.UTC(PS.calY,PS.calM,1)).getUTCDay()+6)%7, start=new Date(Date.UTC(PS.calY,PS.calM,1-off));
-  let h='<div class="dp-wd">Sen</div><div class="dp-wd">Sel</div><div class="dp-wd">Rab</div><div class="dp-wd">Kam</div><div class="dp-wd">Jum</div><div class="dp-wd">Sab</div><div class="dp-wd">Min</div>';
-  for(let i=0;i<42;i++){const d=new Date(start);d.setUTCDate(start.getUTCDate()+i);const ds=iso(d),cur=d.getUTCMonth()===PS.calM;
-    const cls=[cur?'':'out', (ds>=PS.s&&ds<=PS.e)?'inr':'', PS.ks===ds?'ks':'', (PS.s===PS.e&&PS.s===ds)?'sel':'', ds===TODAY?'tdy':''].filter(Boolean).join(' ');
-    h+=`<div class="dp-day ${cls}" onclick="pickDay('${ds}')">${d.getUTCDate()}</div>`;}
-  document.getElementById('dpGrid').innerHTML=h;
+  document.querySelectorAll('.dp-preset').forEach(b=>b.classList.toggle('on',(b.dataset.p==='hari'&&PS.label==='Hari ini')||(b.dataset.p==='7'&&PS.label==='7 hari terakhir')||(b.dataset.p==='28'&&PS.label==='28 hari terakhir')));
+  const modes=[['day','Day'],['minggu','Minggu'],['bulan','Bulan'],['kustom','Kustom']];
+  let h='<div class="dp-tabs">'+modes.map(function(x){return '<button class="'+(PS.pickMode===x[0]?'on':'')+'" onclick="tab(\''+x[0]+'\')">'+x[1]+'</button>';}).join('')+'</div>';
+  if(PS.pickMode==='bulan')h+=monthsHtml(PS.calY);
+  else if(PS.pickMode==='kustom'){let ny=PS.calY,nm=PS.calM+1;if(nm>11){nm=0;ny++;}h+='<div class="dp-cals"><div class="dp-cal">'+calMonthHtml(PS.calY,PS.calM,'L')+'</div><div class="dp-cal">'+calMonthHtml(ny,nm,'R')+'</div></div>';}
+  else h+='<div class="dp-cal">'+calMonthHtml(PS.calY,PS.calM,false)+'</div>';
+  document.getElementById('dpRight').innerHTML=h;
 }
 
 // ================= LIVE =================
@@ -609,7 +640,7 @@ async function boot(){
   let live=false; try{live=await loadWarehouse();}catch(e){}
   if(live){tag.textContent='● Live (warehouse)';tag.style.color='var(--green)';document.getElementById('mode').textContent='data warehouse (live)';}
   try{const _all=[].concat(LIVE.map(d=>d.date),OV.map(d=>d.date),MKT.map(d=>d.date)).filter(d=>/^\d{4}-\d{2}-\d{2}/.test((d||'')+''));
-    if(_all.length){TODAY=_all.sort().slice(-1)[0];PS.e=TODAY;PS.s=addDays(TODAY,-27);PS.calY=+TODAY.slice(0,4);PS.calM=+TODAY.slice(5,7)-1;}}catch(e){}
+    if(_all.length){TODAY=_all.sort().slice(-1)[0];PS.e=TODAY;PS.s=addDays(TODAY,-27);PS.calY=+PS.s.slice(0,4);PS.calM=+PS.s.slice(5,7)-1;}}catch(e){}
   initLiveFilters(); pApply(); try{renderFresh();}catch(e){}
 }
 boot();
