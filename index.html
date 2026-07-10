@@ -207,6 +207,7 @@
       <div class="panel"><h2>Belanja Iklan per Platform</h2><p class="cap">Spend per kanal iklan</p><div id="mbars"></div></div>
       <div class="panel"><h2>ROAS per Platform</h2><p class="cap">Revenue ÷ Spend</p><canvas id="mRoas" height="210"></canvas></div>
     </div>
+    <div class="panel"><h2>Tren ROAS &amp; Spend Iklan</h2><p class="cap">ROAS (garis, sumbu kanan) vs belanja iklan (batang) per periode — ikut date-picker &amp; granularity.</p><canvas id="mTrend" height="150"></canvas></div>
     <div class="panel"><h2>Rincian Iklan</h2><p class="cap">Meta & Google menyusul (butuh koneksi Ads); saat ini TikTok & Shopee dari warehouse.</p>
       <table id="mtable"><thead><tr><th>Platform</th><th class="r">Spend</th><th class="r">Revenue</th><th class="r">Order</th><th class="r">ROAS</th></tr></thead><tbody></tbody></table>
     </div>
@@ -480,10 +481,12 @@ function renderOverview(){
   const rows=OV.filter(d=>(OVPLAT=='Semua'||d.platform==OVPLAT)&&inWin(d.date,win));
   const S=k=>rows.reduce((t,d)=>t+(d[k]||0),0);
   const gmv=S('gmv'),ord=S('order'),peng=S('pengunjung'),pemb=S('pembeli');
+  const pw=prevWindow(),prows=OV.filter(d=>(OVPLAT=='Semua'||d.platform==OVPLAT)&&inWin(d.date,pw));const pS=k=>prows.reduce((t,d)=>t+(d[k]||0),0);
+  const pgmv=pS('gmv'),pord=pS('order'),ppeng=pS('pengunjung');
   document.getElementById('okpis').innerHTML=
-    kpi('GMV',jt(gmv),rows.length+' hari-platform')+kpi('Order',ord.toLocaleString('id-ID'))+
+    kpi('GMV',jt(gmv),rows.length+' hari-platform',deltaHtml(gmv,pgmv))+kpi('Order',ord.toLocaleString('id-ID'),'',deltaHtml(ord,pord))+
     kpi('Pembeli',pemb.toLocaleString('id-ID'))+kpi('AOV',ord?rp(gmv/ord):'—')+
-    kpi('Pengunjung',peng.toLocaleString('id-ID'))+kpi('Konversi',peng?pct(ord/peng):'—','Order÷Pengunjung');
+    kpi('Pengunjung',peng.toLocaleString('id-ID'),'',deltaHtml(peng,ppeng))+kpi('Konversi',peng?pct(ord/peng):'—','Order÷Pengunjung',deltaHtml(peng?ord/peng:0,ppeng?pord/ppeng:0));
   const keyf=d=> GRAN==='bulan'?d.date.slice(0,7):GRAN==='minggu'?weekKey(d.date):d.date;
   const keys=[...new Set(rows.map(keyf))].sort();
   const line=keys.map(k=>rows.filter(d=>keyf(d)===k).reduce((t,d)=>t+d.gmv,0));
@@ -498,9 +501,11 @@ function renderMarketing(){
   const win=periodWindow(), raw=MKT.filter(d=>inWin(d.date,win));
   const S=k=>raw.reduce((t,d)=>t+(d[k]||0),0);
   const spend=S('spend'),rev=S('revenue'),ord=S('order');
+  const pw=prevWindow(),praw=MKT.filter(d=>inWin(d.date,pw));const pS=k=>praw.reduce((t,d)=>t+(d[k]||0),0);
+  const pspend=pS('spend'),prevr=pS('revenue'),pord=pS('order');
   document.getElementById('mkpis').innerHTML=
-    kpi('Total Spend',jt(spend))+kpi('Revenue (Iklan)',jt(rev))+kpi('ROAS',spend?(rev/spend).toFixed(2)+'×':'—','Revenue÷Spend')+
-    kpi('Order dari Iklan',ord.toLocaleString('id-ID'))+kpi('CPO',ord?rp(spend/ord):'—','Spend÷Order');
+    kpi('Total Spend',jt(spend))+kpi('Revenue (Iklan)',jt(rev),'',deltaHtml(rev,prevr))+kpi('ROAS',spend?(rev/spend).toFixed(2)+'×':'—','Revenue÷Spend',deltaHtml(spend?rev/spend:0,pspend?prevr/pspend:0))+
+    kpi('Order dari Iklan',ord.toLocaleString('id-ID'),'',deltaHtml(ord,pord))+kpi('CPO',ord?rp(spend/ord):'—','Spend÷Order');
   const g={};raw.forEach(d=>{const o=g[d.platform]=g[d.platform]||{platform:d.platform,spend:0,revenue:0,order:0};o.spend+=d.spend||0;o.revenue+=d.revenue||0;o.order+=d.order||0;});
   const rows=Object.values(g).sort((a,b)=>b.spend-a.spend);
   const max=Math.max(...rows.map(m=>m.spend),1);
@@ -509,6 +514,12 @@ function renderMarketing(){
   mkChart('mRoas',{type:'bar',data:{labels:rows.map(m=>m.platform),datasets:[{data:rows.map(m=>m.spend?m.revenue/m.spend:0),backgroundColor:'#3fb98a',borderRadius:6}]},
     options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{ticks:{color:'#8b949e',callback:v=>v+'×'},grid:{color:'#1b222b'}}}}});
   document.querySelector('#mtable tbody').innerHTML=rows.map(m=>`<tr><td>${m.platform}</td><td class="r">${jt(m.spend)}</td><td class="r">${jt(m.revenue)}</td><td class="r">${m.order}</td><td class="r">${m.spend?(m.revenue/m.spend).toFixed(2):'—'}×</td></tr>`).join('');
+  const tkf=d=>GRAN==='bulan'?(d.date+'').slice(0,7):GRAN==='minggu'?weekKey(d.date):d.date;
+  const tks=[...new Set(raw.map(tkf))].sort();
+  const tsp=tks.map(k=>raw.filter(d=>tkf(d)===k).reduce((t,d)=>t+(d.spend||0),0));
+  const trv=tks.map(k=>raw.filter(d=>tkf(d)===k).reduce((t,d)=>t+(d.revenue||0),0));
+  const tro=tks.map((k,i)=>tsp[i]?+(trv[i]/tsp[i]).toFixed(2):0);
+  mkChart('mTrend',{data:{labels:tks.map(k=>k.length>7?k.slice(5):k),datasets:[{type:'bar',label:'Spend',data:tsp,backgroundColor:'#4c8bf5',borderRadius:5,yAxisID:'y'},{type:'line',label:'ROAS',data:tro,borderColor:'#3fb98a',backgroundColor:'transparent',tension:.3,pointRadius:2,yAxisID:'y1'}]},options:{plugins:{legend:{display:true,labels:{color:'#8b949e',font:{size:11}}}},scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{position:'left',ticks:{color:'#8b949e',callback:v=>v>=1e9?(v/1e9).toFixed(1)+'M':(v/1e6)+'jt'},grid:{color:'#1b222b'}},y1:{position:'right',ticks:{color:'#3fb98a',callback:v=>v+'×'},grid:{display:false}}}}});
 }
 
 // ================= SUMBER PENJUALAN =================
