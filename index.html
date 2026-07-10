@@ -151,6 +151,7 @@
       <p class="cap">Skor = GMV dinormalisasi ke performa teratas (0–100). GMV/Jam = adil lintas durasi. Definisi metrik = master-mu (ERR=Tayangan÷Impresi, CTR=Klik÷Impresi Produk, CTOR=Pesanan÷Klik).</p>
       <div class="cards" id="lcards"></div>
     </div>
+    <div class="panel"><h2>Tren GMV (Top 5)</h2><p class="cap">Perkembangan GMV 5 teratas pada periode &amp; granularity terpilih — lihat siapa naik/turun.</p><canvas id="hostTrend" height="150"></canvas></div>
   </div>
 
   <!-- ===================== OVERVIEW ===================== -->
@@ -273,17 +274,17 @@ const PDATE=o=>{const d=((o.date||'')+'').trim();return /^\d{4}-\d{2}-\d{2}/.tes
 
 // ================= HELPERS =================
 const rp=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
-const jt=n=> Math.abs(n)>=1e6?'Rp'+(n/1e6).toFixed(1)+'jt':rp(n);
+const jt=n=>{const a=Math.abs(n);return a>=1e12?'Rp'+(n/1e12).toFixed(2)+'T':a>=1e9?'Rp'+(n/1e9).toFixed(1)+'M':a>=1e6?'Rp'+(n/1e6).toFixed(1)+'jt':rp(n);};
 const pct=n=>(n*100).toFixed(1)+'%';
 const kpi=(l,v,t)=>`<div class="kpi"><div class="lab">${l}</div><div class="val">${v}</div><div class="tgt">${t||''}</div></div>`;
 let DIM='host', OVPLAT='Semua', charts={};
 function mkChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
-const axis={plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{ticks:{color:'#8b949e',callback:v=>(v/1e6)+'jt'},grid:{color:'#1b222b'}}}};
+const axis={plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{ticks:{color:'#8b949e',callback:v=>v>=1e9?(v/1e9).toFixed(1)+'M':(v/1e6)+'jt'},grid:{color:'#1b222b'}}}};
 let ACTIVE='live', GRAN='hari';
 const inWin=(dt,w)=> !w || !dt || (dt>=w.s && dt<=w.e);
 function weekKey(ds){const d=new Date(ds+'T00:00:00'),j=new Date(d.getFullYear(),0,1),wk=Math.ceil((((d-j)/864e5)+j.getDay()+1)/7);return d.getFullYear()+'-W'+String(wk).padStart(2,'0');}
 // ===== DATE-RANGE PICKER =====
-const TODAY='2026-07-04';
+let TODAY='2026-07-04';  // fallback; di-anchor ke tanggal data terbaru saat boot()
 const iso=d=>d.toISOString().slice(0,10);
 const addDays=(ds,n)=>{const d=new Date(ds+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return iso(d);};
 const fmtD=ds=>new Date(ds+'T00:00:00Z').toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric',timeZone:'UTC'});
@@ -333,8 +334,8 @@ function renderLive(){
     kpi('Live Watch PV',watch.toLocaleString('id-ID'),'Tayangan')+kpi('ERR',show?pct(watch/show):'—','Watch÷Show')+
     kpi('CTR',pd?pct(klik/pd):'—','Klik÷Imp.Produk')+kpi('CTOR',klik?pct(ord/klik):'—','Order÷Klik')+
     kpi('GMV / Jam',menit?jt(gmv/(menit/60)):'—');
-  const g={};rows.forEach(d=>{const key=d[DIM]||'(kosong)';const o=g[key]=g[key]||{gmv:0,order:0,show:0,watch:0,klik:0,pd:0,menit:0,akun:d.akun};
-    ['gmv','order','show','watch','klik','pd','menit'].forEach(k=>o[k]+=d[k]||0);});
+  const g={};rows.forEach(d=>{const key=d[DIM]||(DIM==='host'?'⚠ Tanpa host':'(kosong)');const o=g[key]=g[key]||{gmv:0,order:0,show:0,watch:0,klik:0,pd:0,menit:0,n:0,akun:d.akun};
+    ['gmv','order','show','watch','klik','pd','menit'].forEach(k=>o[k]+=d[k]||0);o.n++;});
   const list=Object.entries(g).map(([nm,o])=>({nm,...o,aov:o.order?o.gmv/o.order:0,err:o.show?o.watch/o.show:null,
     ctr:o.pd?o.klik/o.pd:null,ctor:o.klik?o.order/o.klik:null,gmvjam:o.menit?o.gmv/(o.menit/60):0})).sort((a,b)=>b.gmv-a.gmv);
   const max=Math.max(...list.map(h=>h.gmv),1);
@@ -342,9 +343,9 @@ function renderLive(){
     <div class="bar-track"><div class="bar-fill" style="width:${Math.max(3,h.gmv/max*100)}%"></div></div><div class="bar-val">${jt(h.gmv)}</div></div>`).join('');
   document.getElementById('lcards').innerHTML=list.map((h,i)=>{const sc=Math.round(h.gmv/max*100),
     b=sc>=80?'b-good':sc>=45?'b-mid':'b-low',bt=sc>=80?'Sangat baik':sc>=45?'Baik':'Perlu dorong',
-    col=sc>=80?'var(--green)':sc>=45?'var(--gold2)':'var(--red)';
+    col=sc>=80?'var(--green)':sc>=45?'var(--gold2)':'var(--red)',rel=h.n>=5;
     return `<div class="sc"><div class="top"><span class="rk">#${i+1}</span><span class="score" style="color:${col}">${sc}</span></div>
-      <div class="nm">${h.nm}</div>${DIM==='host'?`<div class="ak">${h.akun}</div>`:''}<span class="badge ${b}">${bt}</span>
+      <div class="nm">${h.nm}</div><div class="ak">${DIM==='host'?h.akun+' · ':''}${h.n} sesi</div><span class="badge ${b}">${bt}</span>${rel?'':' <span class="badge b-low" title="Rasio disembunyikan: sesi terlalu sedikit">⚠ sampel kecil</span>'}
       <div class="grid4">
         <div class="m"><div class="l">GMV</div><div class="v">${jt(h.gmv)}</div></div>
         <div class="m"><div class="l">Order</div><div class="v">${h.order}</div></div>
@@ -352,12 +353,19 @@ function renderLive(){
         <div class="m"><div class="l">GMV/Jam</div><div class="v">${jt(h.gmvjam)}</div></div>
         <div class="m"><div class="l">Show PV</div><div class="v">${h.show.toLocaleString('id-ID')}</div></div>
         <div class="m"><div class="l">Watch PV</div><div class="v">${h.watch.toLocaleString('id-ID')}</div></div>
-        <div class="m"><div class="l">ERR</div><div class="v">${h.err!=null?pct(h.err):'—'}</div></div>
-        <div class="m"><div class="l">CTR</div><div class="v">${h.ctr!=null?pct(h.ctr):'—'}</div></div>
-        <div class="m"><div class="l">CTOR</div><div class="v">${h.ctor!=null?pct(h.ctor):'—'}</div></div>
+        <div class="m"><div class="l">ERR</div><div class="v">${rel&&h.err!=null?pct(h.err):'—'}</div></div>
+        <div class="m"><div class="l">CTR</div><div class="v">${rel&&h.ctr!=null?pct(h.ctr):'—'}</div></div>
+        <div class="m"><div class="l">CTOR</div><div class="v">${rel&&h.ctor!=null?pct(h.ctor):'—'}</div></div>
       </div></div>`;}).join('');
   const sh=['Dalu','Pagi','Siang','Malam'],sd=sh.map(x=>rows.filter(d=>d.shift==x).reduce((t,d)=>t+d.gmv,0));
   mkChart('shiftChart',{type:'bar',data:{labels:sh,datasets:[{data:sd,backgroundColor:'#e8b84b',borderRadius:6}]},options:axis});
+  // Tren GMV Top-5 (per host/akun sesuai DIM, ikut periode & granularity)
+  const top5=list.slice(0,5).map(h=>h.nm);
+  const tkeyf=d=>GRAN==='bulan'?(d.date+'').slice(0,7):GRAN==='minggu'?weekKey(d.date):d.date;
+  const tkeys=[...new Set(rows.map(tkeyf))].sort();
+  const tpal=['#e8b84b','#4c8bf5','#3fb98a','#a06cd5','#e5716b'];
+  const tds=top5.map((nm,ci)=>({label:nm,data:tkeys.map(k=>rows.filter(d=>(d[DIM]||(DIM==='host'?'⚠ Tanpa host':'(kosong)'))===nm&&tkeyf(d)===k).reduce((t,d)=>t+(d.gmv||0),0)),borderColor:tpal[ci%5],backgroundColor:'transparent',tension:.3,pointRadius:2}));
+  mkChart('hostTrend',{type:'line',data:{labels:tkeys.map(k=>k.length>7?k.slice(5):k),datasets:tds},options:{plugins:{legend:{display:true,labels:{color:'#8b949e',font:{size:11}}}},scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{ticks:{color:'#8b949e',callback:v=>v>=1e9?(v/1e9).toFixed(1)+'M':(v/1e6)+'jt'},grid:{color:'#1b222b'}}}}});
 }
 
 // ================= OVERVIEW =================
@@ -406,12 +414,18 @@ const SRC=[
  {sumber:'Iklan (Ads)',gmv:9800000},
  {sumber:'Organik / Etalase',gmv:6300000},
 ];
+const SRCRAW=[]; // per-tanggal source GMV utk filter periode (diisi dari *_Stats_Harian)
 function renderSumber(){
-  const srt=SRC.slice().sort((a,b)=>b.gmv-a.gmv), tot=SRC.reduce((t,d)=>t+d.gmv,0);
-  const liveG=(SRC.find(s=>s.sumber.toUpperCase().startsWith('LIVE'))||{}).gmv||0;
+  const win=periodWindow(), f=SRCRAW.filter(d=>inWin(d.date,win));
+  let data;
+  if(f.length){const ag={live:0,video:0,afil:0};f.forEach(d=>{ag.live+=d.live;ag.video+=d.video;ag.afil+=d.afil;});
+    data=[{sumber:'LIVE Streaming',gmv:ag.live},{sumber:'Video / Konten',gmv:ag.video},{sumber:'Afiliasi',gmv:ag.afil}].filter(s=>s.gmv>0);}
+  if(!data||!data.length)data=SRC.slice();
+  const srt=data.slice().sort((a,b)=>b.gmv-a.gmv), tot=data.reduce((t,d)=>t+d.gmv,0);
+  const liveG=(data.find(s=>s.sumber.toUpperCase().startsWith('LIVE'))||{}).gmv||0;
   document.getElementById('skpis').innerHTML=
-    kpi('Total GMV Semua Sumber',jt(tot))+kpi('% dari LIVE',tot?pct(liveG/tot):'—')+
-    kpi('Jumlah Sumber',SRC.length)+kpi('Sumber Teratas',srt[0].sumber);
+    kpi('Total GMV Semua Sumber',jt(tot),'periode terpilih')+kpi('% dari LIVE',tot?pct(liveG/tot):'—')+
+    kpi('Jumlah Sumber',data.length)+kpi('Sumber Teratas',srt[0].sumber);
   const max=srt[0].gmv||1;
   document.getElementById('sbars').innerHTML=srt.map(s=>`<div class="bar-row"><div class="nm">${s.sumber}</div>
     <div class="bar-track"><div class="bar-fill" style="width:${Math.max(3,s.gmv/max*100)}%"></div></div><div class="bar-val">${jt(s.gmv)}</div></div>`).join('');
@@ -446,7 +460,7 @@ function renderMarket(){
     `<tr><td>Share Kategori</td><td class="r">${pct(vs)}</td><td class="r">${pct(vsb)}</td><td class="r">${idx(vs,vsb)}</td></tr>`;
   const impR=MS_IMP.filter(d=>inWin(d.date,win)).slice().sort((a,b)=>a.date<b.date?-1:1);
   const ik=[...new Set(impR.map(keyf))].sort();
-  mkChart('msImp',{type:'line',data:{labels:ik.map(k=>k.length>7?k.slice(5):k),datasets:[{label:'Wookey',data:ik.map(k=>impR.filter(d=>keyf(d)===k).reduce((t,d)=>t+d.impressions,0)),borderColor:'#e8b84b',fill:false,tension:.3,pointRadius:2},{label:'Top-5',data:ik.map(k=>impR.filter(d=>keyf(d)===k).reduce((t,d)=>t+d.impressions_bench,0)),borderColor:'#8b949e',borderDash:[5,4],fill:false,tension:.3,pointRadius:0}]},options:{plugins:{legend:{display:true,labels:{color:'#8b949e',font:{size:11}}}},scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{ticks:{color:'#8b949e',callback:v=>(v/1e6)+'jt'},grid:{color:'#1b222b'}}}}});
+  mkChart('msImp',{type:'line',data:{labels:ik.map(k=>k.length>7?k.slice(5):k),datasets:[{label:'Wookey',data:ik.map(k=>impR.filter(d=>keyf(d)===k).reduce((t,d)=>t+d.impressions,0)),borderColor:'#e8b84b',fill:false,tension:.3,pointRadius:2},{label:'Top-5',data:ik.map(k=>impR.filter(d=>keyf(d)===k).reduce((t,d)=>t+d.impressions_bench,0)),borderColor:'#8b949e',borderDash:[5,4],fill:false,tension:.3,pointRadius:0}]},options:{plugins:{legend:{display:true,labels:{color:'#8b949e',font:{size:11}}}},scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{ticks:{color:'#8b949e',callback:v=>v>=1e9?(v/1e9).toFixed(1)+'M':(v/1e6)+'jt'},grid:{color:'#1b222b'}}}}});
   const audR=MS_AUD.filter(d=>inWin(d.date,win));
   const secName=s=>s?s:'Personas';
   const secs=[...new Set(audR.map(d=>secName(d.section)))];
@@ -481,15 +495,16 @@ async function loadWarehouse(){
     if(rows.length){LIVE.length=0;LIVE.push(...rows);ok=true;}
   }catch(e){console.warn('Live gviz:',e);}
   try{ // HOST <- Master_Host roster (kolom: tanggal, akun, shift, host)
-    const mh=await gviz('Master_Host'), hm={};
-    mh.forEach(o=>{const h=((o.host||'')+'').trim();const t=((o.tanggal||o.date||'')+'').trim();const s=((o.shift||'')+'').trim().toLowerCase();const a=((o.akun||'')+'').trim().toLowerCase();if(h&&t&&a)hm[t+'|'+s+'|'+a]=h;});
-    LIVE.forEach(d=>{const k=(d.date+'')+'|'+((d.shift||'')+'').toLowerCase()+'|'+((d.akun||'')+'').toLowerCase();if(hm[k])d.host=hm[k];});
+    const mh=await gviz('Master_Host'), hm={}, da={};
+    mh.forEach(o=>{const h=((o.host||'')+'').trim();const t=((o.tanggal||o.date||'')+'').trim();const s=((o.shift||'')+'').trim().toLowerCase();const a=((o.akun||'')+'').trim().toLowerCase();if(h&&t&&a){hm[t+'|'+s+'|'+a]=h;(da[t+'|'+a]=da[t+'|'+a]||new Set()).add(h);}});
+    LIVE.forEach(d=>{const t=(d.date+''),a=((d.akun||'')+'').toLowerCase(),k=t+'|'+((d.shift||'')+'').toLowerCase()+'|'+a;
+      if(hm[k])d.host=hm[k];else{const set=da[t+'|'+a];if(set&&set.size===1)d.host=[...set][0];}});
   }catch(e){console.warn('Master_Host gviz:',e);}
   try{ // OVERVIEW + SUMBER <- *_Stats_Harian
     let all=[], src={live:0,video:0,afil:0};
     for(const [i,tab] of TABS.stats.entries()){const r=await gviz(tab);
       all=all.concat(r.filter(o=>PDATE(o)).map(o=>({date:PDATE(o),platform:i?'Shopee':'Tiktok',gmv:N(o.gmv||o.penjualan_gmv),order:N(o.pesanan),pembeli:N(o.pembeli),pengunjung:N(o.pengunjung),konversi:N(o.persentase_konversi)})));
-      if(i===0)r.forEach(o=>{src.live+=N(o.gmv_live_kreator)+N(o.gmv_live_penjual);src.video+=N(o.gmv_video);src.afil+=N(o.gmv_afiliasi);});}
+      r.forEach(o=>{const _d=PDATE(o);const _l=N(o.gmv_live_kreator)+N(o.gmv_live_penjual),_v=N(o.gmv_video),_a=N(o.gmv_afiliasi);src.live+=_l;src.video+=_v;src.afil+=_a;if(_d)SRCRAW.push({date:_d,live:_l,video:_v,afil:_a});});}
     if(all.length){OV.length=0;OV.push(...all);ok=true;}
     if(src.live||src.video||src.afil){SRC.length=0;SRC.push({sumber:'LIVE Streaming',gmv:src.live},{sumber:'Video / Konten',gmv:src.video},{sumber:'Afiliasi',gmv:src.afil});}
   }catch(e){console.warn('Overview gviz:',e);}
@@ -520,6 +535,8 @@ async function loadWarehouse(){
 async function boot(){
   let live=false; try{live=await loadWarehouse();}catch(e){}
   if(live){tag.textContent='● Live (warehouse)';tag.style.color='var(--green)';document.getElementById('mode').textContent='data warehouse (live)';}
+  try{const _all=[].concat(LIVE.map(d=>d.date),OV.map(d=>d.date),MKT.map(d=>d.date)).filter(d=>/^\d{4}-\d{2}-\d{2}/.test((d||'')+''));
+    if(_all.length){TODAY=_all.sort().slice(-1)[0];PS.e=TODAY;PS.s=addDays(TODAY,-27);PS.calY=+TODAY.slice(0,4);PS.calM=+TODAY.slice(5,7)-1;}}catch(e){}
   initLiveFilters(); pApply();
 }
 boot();
