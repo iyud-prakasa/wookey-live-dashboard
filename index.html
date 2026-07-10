@@ -171,6 +171,7 @@
     </div>
     <div class="kpis" id="lkpis"></div>
     <div class="insight hidden" id="lInsight"></div>
+    <div class="panel hidden" id="lTargetPanel"></div>
     <div class="two">
       <div class="panel"><h2 id="rankTitle">GMV per Host</h2><p class="cap">Omzet live diperingkat.</p><div id="lbars"></div></div>
       <div class="panel"><h2>GMV per Shift</h2><p class="cap">Dalu · Pagi · Siang · Malam</p><canvas id="shiftChart" height="200"></canvas></div>
@@ -187,6 +188,7 @@
       <div class="cards" id="lcards"></div>
     </div>
     <div class="panel"><h2>Tren GMV (Top 5)</h2><p class="cap">Perkembangan GMV 5 teratas pada periode &amp; granularity terpilih — lihat siapa naik/turun.</p><canvas id="hostTrend" height="150"></canvas></div>
+    <div class="panel"><h2>🗓️ Rekomendasi Jadwal Host</h2><p class="cap">Host paling produktif per shift (GMV/jam, min 3 sesi) pada periode terpilih — buat nyusun jadwal live.</p><div id="lOptimizer"></div></div>
   </div>
 
   <!-- ===================== OVERVIEW ===================== -->
@@ -473,6 +475,43 @@ function renderLive(){
   const tds=top5.map((nm,ci)=>({label:nm,data:tkeys.map(k=>rows.filter(d=>hostOf(d)===nm&&tkeyf(d)===k).reduce((t,d)=>t+(d.gmv||0),0)),borderColor:tpal[ci%5],backgroundColor:'transparent',tension:.3,pointRadius:2}));
   mkChart('hostTrend',{type:'line',data:{labels:tkeys.map(k=>k.length>7?k.slice(5):k),datasets:tds},options:{plugins:{legend:{display:true,labels:{color:'#8b949e',font:{size:11}}}},scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{ticks:{color:'#8b949e',callback:v=>v>=1e9?(v/1e9).toFixed(1)+'M':(v/1e6)+'jt'},grid:{color:'#1b222b'}}}}});
   renderInsight(rows,listAll,sh,sd);
+  renderOptimizer(rows);
+  renderTarget();
+}
+function renderTarget(){
+  const el=document.getElementById('lTargetPanel'); if(!el) return;
+  const curM=TODAY.slice(0,7);
+  const t=TARGET.find(x=>x.bulan===curM);
+  if(!t||!t.gmv_target){ el.classList.add('hidden'); return; }
+  const mtd=LIVE.filter(d=>(d.date+'').slice(0,7)===curM);
+  const mtdGmv=mtd.reduce((s,d)=>s+(d.gmv||0),0);
+  const day=+TODAY.slice(8,10), dim=new Date(Date.UTC(+curM.slice(0,4),+curM.slice(5,7),0)).getUTCDate();
+  const pctG=t.gmv_target?mtdGmv/t.gmv_target*100:0, expected=t.gmv_target*day/dim, onTrack=mtdGmv>=expected;
+  const remain=Math.max(0,t.gmv_target-mtdGmv), daysLeft=Math.max(1,dim-day), perDay=remain/daysLeft;
+  el.innerHTML=`<h2>🎯 Target Bulan Ini (${curM})</h2>
+    <p class="cap">GMV live bulan-berjalan vs target. Ubah target di sheet "Target".</p>
+    <div style="display:flex;gap:26px;flex-wrap:wrap;align-items:baseline">
+      <div><div style="color:var(--muted);font-size:12px">Realisasi (MTD)</div><div style="font-size:23px;font-weight:800;color:var(--gold2)">${jt(mtdGmv)}</div></div>
+      <div><div style="color:var(--muted);font-size:12px">Target</div><div style="font-size:23px;font-weight:800">${jt(t.gmv_target)}</div></div>
+      <div><div style="color:var(--muted);font-size:12px">Tercapai</div><div style="font-size:23px;font-weight:800;color:${onTrack?'var(--green)':'var(--red)'}">${pctG.toFixed(0)}%</div></div>
+      <div><div style="color:var(--muted);font-size:12px">Status (hari ${day}/${dim})</div><div class="delta ${onTrack?'up':'down'}" style="font-size:14px;margin:0">${onTrack?'▲ On-track':'▼ Ketinggalan'}</div></div>
+    </div>
+    <div class="bar-track" style="height:14px;margin-top:14px;position:relative"><div class="bar-fill" style="width:${Math.min(100,pctG)}%"></div><div title="Pace ideal" style="position:absolute;top:-3px;left:${Math.min(100,day/dim*100)}%;width:2px;height:20px;background:var(--muted)"></div></div>
+    <p class="cap" style="margin-top:10px">Butuh <b style="color:var(--gold2)">${jt(perDay)}/hari</b> selama ${daysLeft} hari tersisa buat capai target. Garis abu = pace ideal hari ini.</p>`;
+  el.classList.remove('hidden');
+}
+function renderOptimizer(rows){
+  const el=document.getElementById('lOptimizer'); if(!el) return;
+  const shifts=['Dalu','Pagi','Siang','Malam'], g={};
+  rows.forEach(d=>{ const s=d.shift||'?', h=d.host||'⚠ Tanpa host'; g[s]=g[s]||{}; const o=g[s][h]=g[s][h]||{gmv:0,menit:0,n:0}; o.gmv+=d.gmv||0; o.menit+=d.menit||0; o.n++; });
+  let html='<div class="two" style="gap:14px">';
+  shifts.forEach(s=>{ const hm=g[s]||{};
+    const list=Object.entries(hm).map(([h,o])=>({h,n:o.n,gmvjam:o.menit?o.gmv/(o.menit/60):0})).filter(x=>x.n>=3&&x.h!=='⚠ Tanpa host').sort((a,b)=>b.gmvjam-a.gmvjam).slice(0,3);
+    html+=`<div class="panel" style="margin:0;background:var(--panel2)"><h2 style="font-size:14px;margin-bottom:8px">${s}</h2>`;
+    html+= list.length? list.map((x,i)=>`<div class="bar-row" style="grid-template-columns:24px 1fr auto;margin:6px 0"><div class="nm" style="color:var(--gold2)">#${i+1}</div><div class="nm">${x.h} <span style="color:var(--muted);font-size:11px">(${x.n} sesi)</span></div><div class="bar-val">${jt(x.gmvjam)}/jam</div></div>`).join('') : '<p class="cap" style="margin:0">Sesi kurang (min 3).</p>';
+    html+='</div>';
+  });
+  el.innerHTML=html+'</div>';
 }
 
 // ================= OVERVIEW =================
@@ -532,6 +571,7 @@ const SRC=[
  {sumber:'Organik / Etalase',gmv:6300000},
 ];
 const SRCRAW=[]; // per-tanggal source GMV utk filter periode (diisi dari *_Stats_Harian)
+const TARGET=[]; // {bulan,gmv_target,order_target} dari sheet Target
 function renderSumber(){
   const win=periodWindow(), f=SRCRAW.filter(d=>inWin(d.date,win));
   let data;
@@ -647,6 +687,11 @@ async function loadWarehouse(){
     const rows=r.filter(o=>PDATE(o)).map(o=>({date:PDATE(o),section:((o.section||'')+''),label:((o.label||'')+''),brand:N(o.brand),benchmark:N(o.benchmark)}));
     if(rows.length){MS_AUD.length=0;MS_AUD.push(...rows);ok=true;}
   }catch(e){console.warn('Aud gviz:',e);}
+  try{ // TARGET <- sheet Target (target bulanan)
+    const r=await gviz('Target');
+    const trows=r.map(o=>({bulan:((o.bulan||'')+'').slice(0,7),gmv_target:N(o.gmv_target),order_target:N(o.order_target)})).filter(o=>o.bulan);
+    if(trows.length){TARGET.length=0;TARGET.push(...trows);}
+  }catch(e){console.warn('Target gviz:',e);}
   return ok;
 }
 async function boot(){
