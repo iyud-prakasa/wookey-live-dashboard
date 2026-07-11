@@ -43,12 +43,30 @@
   .empty{color:var(--muted);text-align:center;padding:50px;font-size:14px}
   .foot{margin-top:34px;color:var(--muted);font-size:11.5px;border-top:1px solid var(--border);padding-top:14px}
   .foot b{color:var(--text)}
+  .hbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .btn.add{background:#1c1607;border-color:var(--gold);color:var(--gold2)}
+  .btn.add:hover{background:#241d0a;color:var(--gold)}
+  .cedit{margin-left:8px;flex:0 0 auto;background:var(--panel2);border:1px solid var(--border);color:var(--muted);border-radius:6px;font-size:11px;padding:2px 7px;cursor:pointer;line-height:1.4}
+  .cedit:hover{border-color:var(--gold);color:var(--gold)}
+  .ovl{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;z-index:50}
+  .ovl.on{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:22px 24px;max-width:470px;width:92%}
+  .modal h3{font-size:17px;margin-bottom:10px;color:var(--gold2)}
+  .modal p{font-size:13px;color:var(--muted);margin-bottom:12px}
+  .modal ol{font-size:12.5px;color:var(--text);margin:0 0 16px 18px}
+  .modal ol li{margin-bottom:6px}
+  .modal ol li b{color:var(--gold2)}
+  .modal .act{display:flex;gap:9px;justify-content:flex-end}
 </style>
 </head>
 <body>
   <div class="top">
     <h1>📖 Kamus Metrik <span class="em">WOOKEY</span></h1>
-    <a href="index.html"><button class="btn">← Kembali ke Dashboard</button></a>
+    <div class="hbtns">
+      <button class="btn add" onclick="openSheet('add')">➕ Tambah Metric</button>
+      <button class="btn" onclick="openSheet('edit')">✏️ Edit Metric</button>
+      <a href="index.html"><button class="btn">← Dashboard</button></a>
+    </div>
   </div>
   <div class="sub">Definisi &amp; rumus baku tiap metric live-selling · sumber: sheet <b>Information Data</b> · sinkron otomatis harian</div>
 
@@ -70,13 +88,41 @@
   <div id="out"><div class="empty">Memuat kamus…</div></div>
 
   <div class="foot">
-    Cara update: buka sheet <b>Information Data</b> → revisi/tambah metric → halaman ini otomatis ikut (sinkron ~tiap pagi via <b>syncKamusMetrik</b>).
-    Sumber data: tab <b>Kamus_Metrik</b> di warehouse Data Wookey.
+    Tombol <b>➕ Tambah Metric</b> &amp; <b>✏️ Edit Metric</b> membuka Google Sheet sumber. Ubah rumus di tab <b>Information Data</b>, definisi di tab <b>Keterangan Penjelasan</b> — kamus &amp; dashboard ikut otomatis (sinkron ~tiap pagi). Sumber: tab <b>Kamus_Metrik</b> di warehouse Data Wookey.
+  </div>
+
+  <div class="ovl" id="ovl" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <h3 id="mTitle">Tambah Metric</h3>
+      <p id="mDesc"></p>
+      <ol id="mSteps"></ol>
+      <div class="act">
+        <button class="btn" onclick="closeModal()">Batal</button>
+        <button class="btn add" id="mGo">Buka Google Sheet ↗</button>
+      </div>
+    </div>
   </div>
 
 <script>
 const SHEET_ID='18oOYXIovDQGyfV2EsHdMnL3heQx3FE0EfjIFs93-0Go';
+const SHEET_SRC='https://docs.google.com/spreadsheets/d/1QJKWgz_FD_j6eWshMtVZydDSAMYG5yvKxxz1ebLyNNw/edit#gid=1023890157';
 let ROWS=[], CAT='all';
+
+function openSheet(mode){
+  const T=document.getElementById('mTitle'), D=document.getElementById('mDesc'), S=document.getElementById('mSteps');
+  if(mode==='add'){
+    T.textContent='➕ Tambah Metric';
+    D.textContent='Metric ditambah di Google Sheet sumber (biar rumus & definisi tetap satu pintu). Setelah disimpan, metric baru muncul di kamus otomatis.';
+    S.innerHTML='<li>Di tab <b>Information Data</b>: tambah baris baru — isi No, Header (nama metric), Format, dan rumus kolom Shopee &amp; Tiktok.</li><li>Di tab <b>Keterangan Penjelasan</b>: tambah baris Header + definisinya.</li><li>Simpan. Muncul di kamus ~tiap pagi (atau minta aku sinkron sekarang).</li>';
+  }else{
+    T.textContent='✏️ Edit Metric / Definisi';
+    D.textContent='Edit rumus atau definisi metric langsung di Google Sheet sumber. Perubahan otomatis mengalir ke kamus & dashboard.';
+    S.innerHTML='<li>Ubah <b>rumus</b> di tab <b>Information Data</b> (kolom Shopee / Tiktok).</li><li>Ubah <b>definisi</b> di tab <b>Keterangan Penjelasan</b>.</li><li>Simpan. Kamus &amp; dashboard ikut ~tiap pagi.</li>';
+  }
+  document.getElementById('mGo').onclick=function(){ window.open(SHEET_SRC,'_blank'); };
+  document.getElementById('ovl').classList.add('on');
+}
+function closeModal(){ document.getElementById('ovl').classList.remove('on'); }
 
 function gvizUrl(tab){
   const q=String.fromCharCode(63), a=String.fromCharCode(38), e=String.fromCharCode(61);
@@ -130,7 +176,7 @@ function render(){
     if(!rs.length) return;
     html+='<div class="cathead">'+catName(c)+'</div><div class="grid">';
     rs.sort((a,b)=>a.no-b.no).forEach(r=>{
-      html+='<div class="card"><div class="h"><div class="no">'+r.no+'</div><div class="nm">'+esc(r.nm)+'</div>'+(r.fmt?'<div class="fmt">'+esc(r.fmt.split('{')[0].trim()||r.fmt)+'</div>':'')+'</div>';
+      html+='<div class="card"><div class="h"><div class="no">'+r.no+'</div><div class="nm">'+esc(r.nm)+'</div>'+(r.fmt?'<div class="fmt">'+esc(r.fmt.split('{')[0].trim()||r.fmt)+'</div>':'')+'<button class="cedit" onclick="openSheet(\'edit\')" title="Edit metric ini di sheet">✏️</button></div>';
       if(r.def) html+='<div class="def">'+esc(r.def)+'</div>';
       html+='<div class="frm"><div class="pl tt">TikTok</div>'+valHtml(r.tt)+'</div>';
       html+='<div class="frm"><div class="pl sh">Shopee</div>'+valHtml(r.sh)+'</div>';

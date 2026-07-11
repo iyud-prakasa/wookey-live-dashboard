@@ -179,7 +179,7 @@
     </div>
     <div class="panel">
       <h2 id="scTitle">Peringkat Host (Scorecard)</h2>
-      <p class="cap">Skor = GMV dinormalisasi ke performa teratas (0–100). GMV/Jam = adil lintas durasi. Definisi metrik = master-mu (ERR=Tayangan÷Impresi, CTR=Klik÷Impresi Produk, CTOR=Pesanan÷Klik).</p>
+      <p class="cap">Skor = GMV dinormalisasi ke performa teratas (0–100). GMV/Jam = adil lintas durasi. Definisi metrik = master-mu (ERR=Tayangan÷Impresi, CTR=Klik÷Tayangan, CTOR=Pesanan÷Klik).</p>
       <div class="scctl">
         <input id="scSearch" placeholder="Cari nama…" oninput="renderLive()">
         <select id="scSort" onchange="renderLive()"><option value="gmv">Urut: GMV</option><option value="gmvjam">Urut: GMV/Jam</option><option value="skor">Urut: Skor</option><option value="order">Urut: Order</option></select>
@@ -435,12 +435,12 @@ function renderLive(){
     kpi('Total GMV',jt(gmv),rows.length+' sesi live',deltaHtml(gmv,pgmv))+kpi('Total Order',ord.toLocaleString('id-ID'),'',deltaHtml(ord,pord))+
     kpi('AOV',ord?rp(gmv/ord):'—','GMV÷Order')+kpi('Live Show PV',eShow.toLocaleString('id-ID'),'Impresi (TikTok)')+
     kpi('Live Watch PV',watch.toLocaleString('id-ID'),'Tayangan')+kpi('ERR',eShow?pct(eWatch/eShow):'—','Tayangan÷Impresi')+
-    kpi('CTR',pd?pct(klik/pd):'—','Klik÷Produk Dilihat')+kpi('CTOR',klik?pct(ord/klik):'—','Order÷Klik')+
+    kpi('CTR',watch?pct(klik/watch):'—','Klik÷Tayangan')+kpi('CTOR',klik?pct(ord/klik):'—','Order÷Klik')+
     kpi('GMV / Jam',menit?jt(gmv/(menit/60)):'—','',deltaHtml(menit?gmv/(menit/60):0,pmenit?pgmv/(pmenit/60):0));
   const g={};rows.forEach(d=>{const key=hostOf(d);const o=g[key]=g[key]||{gmv:0,order:0,show:0,watch:0,klik:0,pd:0,menit:0,n:0,akun:d.akun};
     ['gmv','order','show','watch','klik','pd','menit'].forEach(k=>o[k]+=d[k]||0);o.n++;});
   const listAll=Object.entries(g).map(([nm,o])=>({nm,...o,aov:o.order?o.gmv/o.order:0,err:o.show?o.watch/o.show:null,
-    ctr:o.pd?o.klik/o.pd:null,ctor:o.klik?o.order/o.klik:null,gmvjam:o.menit?o.gmv/(o.menit/60):0})).sort((a,b)=>b.gmv-a.gmv);
+    ctr:o.watch?o.klik/o.watch:null,ctor:o.klik?o.order/o.klik:null,gmvjam:o.menit?o.gmv/(o.menit/60):0})).sort((a,b)=>b.gmv-a.gmv);
   const max=Math.max(...listAll.map(h=>h.gmv),1);listAll.forEach(h=>h.skor=Math.round(h.gmv/max*100));
   document.getElementById('lbars').innerHTML=listAll.map(h=>`<div class="bar-row clk ${HOSTF===h.nm?'on':''}" onclick="pickHost('${jsq(h.nm)}')"><div class="nm">${h.nm}</div>
     <div class="bar-track"><div class="bar-fill" style="width:${Math.max(3,h.gmv/max*100)}%"></div></div><div class="bar-val">${jt(h.gmv)}</div></div>`).join('');
