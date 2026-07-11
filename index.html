@@ -145,6 +145,7 @@
         </div>
       </div>
       <span class="btn" id="tag" style="color:var(--gold2)">● Live-ready</span>
+      <a class="btn" href="kamus.html" target="_blank" style="text-decoration:none;color:var(--gold)">📖 Referensi Metrik</a>
       <button class="btn" onclick="location.reload()">↻ Refresh</button>
     </div>
   </div>
@@ -426,14 +427,15 @@ function renderLive(){
   if(HOSTF){const f=rows.filter(d=>hostOf(d)===HOSTF);if(f.length)rows=f;else HOSTF=null;}
   const S=(arr,k)=>arr.reduce((t,d)=>t+(d[k]||0),0);
   const gmv=S(rows,'gmv'),ord=S(rows,'order'),show=S(rows,'show'),watch=S(rows,'watch'),klik=S(rows,'klik'),pd=S(rows,'pd'),menit=S(rows,'menit');
+  const ttRows=rows.filter(d=>/tiktok/i.test(String(d.platform)));const eShow=S(ttRows,'show'),eWatch=S(ttRows,'watch');
   const pw=prevWindow();let prows=LIVE.filter(d=>base(d)&&inWin(d.date,pw));if(HOSTF)prows=prows.filter(d=>hostOf(d)===HOSTF);
   const pgmv=S(prows,'gmv'),pord=S(prows,'order'),pmenit=S(prows,'menit');
   document.getElementById('lChip').innerHTML=HOSTF?`<span class="chip" onclick="pickHost(null)">Fokus: <b>${HOSTF}</b> ✕</span>`:'';
   document.getElementById('lkpis').innerHTML=
     kpi('Total GMV',jt(gmv),rows.length+' sesi live',deltaHtml(gmv,pgmv))+kpi('Total Order',ord.toLocaleString('id-ID'),'',deltaHtml(ord,pord))+
-    kpi('AOV',ord?rp(gmv/ord):'—','GMV÷Order')+kpi('Live Show PV',show.toLocaleString('id-ID'),'Impresi')+
-    kpi('Live Watch PV',watch.toLocaleString('id-ID'),'Tayangan')+kpi('ERR',show?pct(watch/show):'—','Watch÷Show')+
-    kpi('CTR',pd?pct(klik/pd):'—','Klik÷Imp.Produk')+kpi('CTOR',klik?pct(ord/klik):'—','Order÷Klik')+
+    kpi('AOV',ord?rp(gmv/ord):'—','GMV÷Order')+kpi('Live Show PV',eShow.toLocaleString('id-ID'),'Impresi (TikTok)')+
+    kpi('Live Watch PV',watch.toLocaleString('id-ID'),'Tayangan')+kpi('ERR',eShow?pct(eWatch/eShow):'—','Tayangan÷Impresi')+
+    kpi('CTR',pd?pct(klik/pd):'—','Klik÷Produk Dilihat')+kpi('CTOR',klik?pct(ord/klik):'—','Order÷Klik')+
     kpi('GMV / Jam',menit?jt(gmv/(menit/60)):'—','',deltaHtml(menit?gmv/(menit/60):0,pmenit?pgmv/(pmenit/60):0));
   const g={};rows.forEach(d=>{const key=hostOf(d);const o=g[key]=g[key]||{gmv:0,order:0,show:0,watch:0,klik:0,pd:0,menit:0,n:0,akun:d.akun};
     ['gmv','order','show','watch','klik','pd','menit'].forEach(k=>o[k]+=d[k]||0);o.n++;});
