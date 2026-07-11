@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kamus Metrik WOOKEY — Live Selling</title>
+<style>
+  :root{--bg:#0b0e11;--panel:#12161c;--panel2:#0f141a;--border:#232a33;--text:#c9d1d9;--muted:#8b949e;--gold:#e8b84b;--gold2:#f0c964;--green:#3fb98a;--red:#e5716b;--blue:#4c8bf5;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;padding:24px 28px 60px;}
+  a{color:var(--gold);text-decoration:none}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+  h1{font-size:26px;font-weight:800;letter-spacing:-.5px}
+  h1 .em{color:var(--gold)}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+  .btn{background:var(--panel);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+  .btn:hover{border-color:var(--gold);color:var(--gold)}
+  .banner{background:linear-gradient(180deg,#141a13,#12161c);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:12px;padding:14px 18px;margin-bottom:18px;font-size:13px}
+  .banner b{color:var(--gold2)}
+  .banner .row{margin-top:6px;color:var(--muted)}
+  .banner .row b{color:var(--text)}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:20px}
+  #q{flex:1;min-width:220px;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:10px;font-size:14px}
+  #q:focus{outline:none;border-color:var(--gold)}
+  .chip{background:var(--panel);border:1px solid var(--border);color:var(--muted);padding:7px 13px;border-radius:20px;font-size:12.5px;font-weight:600;cursor:pointer}
+  .chip.on{background:#1c1607;border-color:var(--gold);color:var(--gold)}
+  .cathead{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:24px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:16px 18px;transition:.15s}
+  .card:hover{border-color:#3a4553}
+  .card .h{display:flex;align-items:baseline;gap:9px;margin-bottom:7px}
+  .card .no{width:24px;height:24px;flex:0 0 24px;background:var(--panel2);border:1px solid var(--border);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;color:var(--gold)}
+  .card .nm{font-size:15.5px;font-weight:700;color:#fff}
+  .card .fmt{margin-left:auto;font-size:10.5px;color:var(--muted);background:var(--panel2);border:1px solid var(--border);padding:2px 8px;border-radius:6px;white-space:nowrap}
+  .card .def{font-size:13px;color:var(--muted);margin-bottom:11px}
+  .frm{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;margin-top:6px}
+  .frm .pl{flex:0 0 54px;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;padding:3px 0}
+  .frm .pl.tt{color:var(--gold)}
+  .frm .pl.sh{color:#ff7a45}
+  .frm .val{flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:12px;color:var(--text)}
+  .frm .val.na{color:var(--muted);font-style:italic;font-family:inherit}
+  .frm .val .op{color:var(--gold2);font-weight:700}
+  .empty{color:var(--muted);text-align:center;padding:50px;font-size:14px}
+  .foot{margin-top:34px;color:var(--muted);font-size:11.5px;border-top:1px solid var(--border);padding-top:14px}
+  .foot b{color:var(--text)}
+</style>
+</head>
+<body>
+  <div class="top">
+    <h1>📖 Kamus Metrik <span class="em">WOOKEY</span></h1>
+    <a href="index.html"><button class="btn">← Kembali ke Dashboard</button></a>
+  </div>
+  <div class="sub">Definisi &amp; rumus baku tiap metric live-selling · sumber: sheet <b>Information Data</b> · sinkron otomatis harian</div>
+
+  <div class="banner">
+    📌 <b>Aturan baku</b>
+    <div class="row"><b>Shift</b> (dari jam mulai live): Dalu 00:00–05:59 · Pagi 06:00–11:59 · Siang 12:00–17:59 · Malam 18:00–23:59</div>
+    <div class="row"><b>Akun</b>: kalau nama akun tidak mengandung kata "shopee" → itu akun TikTok · <b>Brand</b>: Wookey Weight &amp; Sohoney Jr</div>
+    <div class="row"><b>Catatan</b>: Shopee tidak punya data <b>Impresi</b>, jadi <b>ERR</b> hanya berlaku untuk TikTok.</div>
+  </div>
+
+  <div class="controls">
+    <input id="q" placeholder="🔎 Cari metric… (mis. GMV, CTR, ERR, shift)" oninput="render()">
+    <div class="chip on" data-cat="all" onclick="setCat(this)">Semua</div>
+    <div class="chip" data-cat="dim" onclick="setCat(this)">Dimensi</div>
+    <div class="chip" data-cat="met" onclick="setCat(this)">Metrik</div>
+    <div class="chip" data-cat="ras" onclick="setCat(this)">Rasio</div>
+  </div>
+
+  <div id="out"><div class="empty">Memuat kamus…</div></div>
+
+  <div class="foot">
+    Cara update: buka sheet <b>Information Data</b> → revisi/tambah metric → halaman ini otomatis ikut (sinkron ~tiap pagi via <b>syncKamusMetrik</b>).
+    Sumber data: tab <b>Kamus_Metrik</b> di warehouse Data Wookey.
+  </div>
+
+<script>
+const SHEET_ID='18oOYXIovDQGyfV2EsHdMnL3heQx3FE0EfjIFs93-0Go';
+let ROWS=[], CAT='all';
+
+function gvizUrl(tab){
+  const q=String.fromCharCode(63), a=String.fromCharCode(38), e=String.fromCharCode(61);
+  return 'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq'+q+'tqx'+e+'out:json'+a+'sheet'+e+encodeURIComponent(tab)+a+'headers'+e+'1'+a+'_cb'+e+Date.now();
+}
+async function load(){
+  try{
+    const r=await fetch(gvizUrl('Kamus_Metrik'),{cache:'no-store'});
+    const t=await r.text();
+    const j=JSON.parse(t.substring(t.indexOf('{'),t.lastIndexOf('}')+1));
+    ROWS=j.table.rows.map(row=>{
+      const c=row.c.map(x=>x?(x.v!=null?x.v:''):'');
+      return {no:+c[0]||0, nm:(c[1]||'').toString(), fmt:(c[2]||'').toString(), sh:(c[3]||'').toString(), tt:(c[4]||'').toString(), def:(c[5]||'').toString()};
+    }).filter(x=>x.nm);
+    render();
+  }catch(err){
+    document.getElementById('out').innerHTML='<div class="empty">Gagal memuat kamus.<br><button class="btn" style="margin-top:12px" onclick="load()">Muat ulang</button></div>';
+  }
+}
+function catOf(no){ return no<=7?'dim': no<=20?'met':'ras'; }
+function catName(c){ return c==='dim'?'Dimensi (identitas sesi)': c==='met'?'Metrik (volume)':'Rasio (persentase)'; }
+
+// bersihkan teks rumus/sumber jadi enak dibaca
+function fmtFormula(s){
+  if(!s) return {t:'—',na:true};
+  s=s.replace(/\s+/g,' ').trim();
+  if(/tidak ada data/i.test(s)) return {t:'Tidak ada data di platform ini',na:true};
+  const isRumus=/^rumus\s*:/i.test(s);
+  s=s.replace(/^rumus\s*:/i,'').split('Data Excel :').join(' ').replace(/\s+/g,' ').trim();
+  if(/(÷|dibagi)\s*0\b/i.test(s)) return {t:'N/A (tidak ada Impresi di Shopee)',na:true};
+  s=s.split(' dibagi ').join(' ÷ ');
+  const label=isRumus?'= ':'kolom: ';
+  return {t:label+s, na:false, rumus:isRumus};
+}
+function valHtml(s){
+  const f=fmtFormula(s);
+  const txt=f.t.split('÷').join('<span class="op">÷</span>');
+  return '<div class="val'+(f.na?' na':'')+'">'+txt+'</div>';
+}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function render(){
+  const q=(document.getElementById('q').value||'').toLowerCase().trim();
+  let rows=ROWS.filter(r=>CAT==='all'||catOf(r.no)===CAT);
+  if(q) rows=rows.filter(r=>(r.nm+' '+r.def+' '+r.tt+' '+r.sh).toLowerCase().includes(q));
+  if(!rows.length){document.getElementById('out').innerHTML='<div class="empty">Tidak ada metric yang cocok.</div>';return;}
+  const cats=['dim','met','ras'];
+  let html='';
+  cats.forEach(c=>{
+    const rs=rows.filter(r=>catOf(r.no)===c);
+    if(!rs.length) return;
+    html+='<div class="cathead">'+catName(c)+'</div><div class="grid">';
+    rs.sort((a,b)=>a.no-b.no).forEach(r=>{
+      html+='<div class="card"><div class="h"><div class="no">'+r.no+'</div><div class="nm">'+esc(r.nm)+'</div>'+(r.fmt?'<div class="fmt">'+esc(r.fmt.split('{')[0].trim()||r.fmt)+'</div>':'')+'</div>';
+      if(r.def) html+='<div class="def">'+esc(r.def)+'</div>';
+      html+='<div class="frm"><div class="pl tt">TikTok</div>'+valHtml(r.tt)+'</div>';
+      html+='<div class="frm"><div class="pl sh">Shopee</div>'+valHtml(r.sh)+'</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  });
+  document.getElementById('out').innerHTML=html;
+}
+function setCat(el){ document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); CAT=el.dataset.cat; render(); }
+load();
+</script>
+</body>
+</html>
